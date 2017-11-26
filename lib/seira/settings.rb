@@ -51,9 +51,7 @@ module Seira
     private
 
     def parse_settings
-      raw_settings = YAML.load_file(config_path)
-      puts raw_settings.inspect
-      raw_settings
+      YAML.load_file(config_path)
     end
   end
 end
