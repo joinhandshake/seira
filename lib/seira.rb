@@ -7,7 +7,7 @@ require 'highline/import'
 Dir["seira/*.rb"].each { |file| require_relative file }
 
 # A base runner class that does base checks and then delegates the actual
-# work for the command to a class in src/gcp folder.
+# work for the command to a class in lib/seira folder.
 module Seira
   class Runner
     CATEGORIES = {
@@ -66,7 +66,7 @@ module Seira
       command_class = CATEGORIES[category]
 
       unless command_class
-        puts "Unknown command specified. Usage: 'gcp <cluster> <app> <category> <action> <args..>'."
+        puts "Unknown command specified. Usage: 'seira <cluster> <app> <category> <action> <args..>'."
         puts "Valid categories are: #{CATEGORIES.keys.join(', ')}"
         exit(1)
       end
