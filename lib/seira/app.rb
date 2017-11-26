@@ -1,6 +1,3 @@
-#!/usr/bin/env ruby
-
-require 'dotenv/load'
 require 'json'
 require 'base64'
 require 'fileutils'

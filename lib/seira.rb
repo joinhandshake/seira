@@ -1,10 +1,17 @@
-require "seira/version"
-
-require 'dotenv/load'
 require 'json'
 require 'highline/import'
 
-Dir["seira/*.rb"].each { |file| require_relative file }
+require "seira/version"
+require 'seira/app'
+require 'seira/cluster'
+require 'seira/memcached'
+require 'seira/pods'
+require 'seira/proxy'
+require 'seira/random'
+require 'seira/redis'
+require 'seira/secrets'
+require 'seira/settings'
+require 'seira/setup'
 
 # A base runner class that does base checks and then delegates the actual
 # work for the command to a class in lib/seira folder.
