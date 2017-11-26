@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'seira'
+
+Seira::Runner.new.run

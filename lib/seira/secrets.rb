@@ -1,5 +1,5 @@
 require 'json'
-require "base64"
+require 'base64'
 
 # Example usages:
 # seira staging specs secret set RAILS_ENV staging

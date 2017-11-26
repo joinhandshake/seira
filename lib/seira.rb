@@ -116,5 +116,3 @@ module Seira
     end
   end
 end
-
-Seira::Runner.new.run
