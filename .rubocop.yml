@@ -1,0 +1,109 @@
+AllCops:
+  Exclude:
+    - bin/**/*
+
+  TargetRubyVersion: 2.4.1
+
+Rails:
+  Enabled: false
+
+Style/CollectionMethods:
+  Enabled: true
+  PreferredMethods:
+    collect: 'map'
+    collect!: 'map!'
+    inject: 'reduce'
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Layout/AccessModifierIndentation:
+  Enabled: false
+
+Style/BlockDelimiters:
+  Enabled: false
+
+Style/BracesAroundHashParameters:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false # Was annoying, not needed
+
+Layout/DotPosition:
+  EnforcedStyle: trailing
+
+Naming/FileName:
+  Enabled: false # is really annoying and not good
+
+Style/GuardClause:
+  Enabled: false
+
+Style/Not:
+  Enabled: false
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/RedundantSelf:
+  Enabled: false
+
+Style/SignalException:
+  Enabled: false
+
+Style/StringLiterals:
+  Enabled: false
+
+Style/TrailingCommaInLiteral:
+  Enabled: false
+
+Style/TrailingCommaInArguments:
+  Enabled: false
+
+Style/SymbolArray:
+  Enabled: false
+
+Metrics/AbcSize:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/ClassLength:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Metrics/LineLength:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+Lint/UselessAssignment:
+  Enabled: false
+
+Rails/Delegate:
+  Enabled: false
+
+Rails/HasAndBelongsToMany:
+  Enabled: false
+
+Rails/Output:
+  Enabled: false # we use puts for things like migrations
+
+Rails/Blank:
+  Enabled: false
+
+# We copy the 'default.yml' file provided by rubocop gem repo into the config/rubocop.yml file
+# in order to make upgrades easy (just drop the new default in). This ensures we get the lastest
+# config file when we upgrade with all new cops.
+# Any non-default configuration should go into this file so that when we upgrade the dropped in
+# new default file does not override any of our configurations.
+# NOTE: Inorder to prioritize this file's declaration, we must inherit at bottom of file
+inherit_from:
+  - .default-rubocop.yml
