@@ -72,7 +72,15 @@ seira:
     - app2
 ```
 
-This specification is read in and used to determine what `gcloud` context to use and what `kubectl` cluster to use when operating commands. For example, `seira staging` will connect to `org-internal` gcloud configuration and `gke_org-internal_us-central1-a_internal` kubectl cluster. For shorthand, `seira i` shorthand is specified as an alias.
+This specification is read in and used to determine what `gcloud` context to use and what `kubectl` cluster to use when operating commands. For example, `seira internal` will connect to `org-internal` gcloud configuration and `gke_org-internal_us-central1-a_internal` kubectl cluster. For shorthand, `seira i` shorthand is specified as an alias.
+
+### Manifest Files
+
+Seira expects your Kubernetes manifests to exist in the "kubernetes/<cluster>/<app>" directory. When a deploy is run on `foo` app in `staging` cluster, it looks to `kubernetes/staging/foo` directory for the manifest files.
+
+### Initial Setup
+
+In order to use Seira, an initial setup is needed. Use the `seira setup` command to set up each of your clusters in your configuration file.
 
 ## Example functionality
 
@@ -82,7 +90,7 @@ Easily run a proxy UI (`kubectl proxy`) by using `seira staging proxy` shorthand
 
 ### Applying New Manifest Files
 
-By using `seira staging app-name app apply`, Seira will find/replace `REVISION` with the value in the `REVISION` environment variable and apply the new configs to the cluster. If `REVISION` is nil, it will ask to use the tag currently being used by the current `web` deployment.
+By using `seira staging app-name app apply`, Seira will find/replace the string "REVISION" in your manifests with the value in the `REVISION` environment variable and apply the new configs to the cluster. If `REVISION` is nil, it will ask to use the tag currently being used by the current `web` deployment.
 
 ### Setting Secrets
 
