@@ -2,7 +2,9 @@
 
 An opinionated library for building applications on Kubernetes. 
 
-This library builds a framework for doing deployments, secrets management, managing memcached, managing redis, managing and accessing pods, bootstraping new apps and clusters. It makes decisions about how to run the apps and cluster to make managing the cluster easier.
+This library builds a framework for doing deployments, secrets management, managing memcached, managing redis, managing and accessing pods, bootstraping new apps and clusters, and more. It makes decisions about how to run the apps and cluster to make managing the cluster easier.
+
+The vision for Seira is to produce a CLI and set of guidelines that makes deploying apps on Kubernetes as easy as Heroku.
 
 ## What does the name mean?
 
