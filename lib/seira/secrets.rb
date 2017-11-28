@@ -72,7 +72,7 @@ module Seira
     end
 
     def validate_keys_and_values
-      unless args.length > 0 && args.all? { |arg| /^[^=]+=[^=]+$/ =~ arg }
+      if args.empty? || !args.all? { |arg| /^[^=]+=[^=]+$/ =~ arg }
         puts "Please list keys and values to set like KEY_ONE=value_one KEY_TWO=value_two"
         exit(1)
       end

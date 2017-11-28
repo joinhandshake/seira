@@ -7,6 +7,7 @@ describe Seira::Secrets do
     @action = action
     @args = args
 
+    allow(Seira::Cluster).to receive(:current_cluster).and_return('clustername')
     expect(subject).to receive(:`).with('kubectl get secret appname-secrets --namespace appname -o json').and_return(old_secrets.to_json)
     expect(subject).to receive(:system).with('kubectl get secret appname-secrets --namespace appname > /dev/null').and_return(true)
     expect(File).to receive(:open) do |filename, &block|
