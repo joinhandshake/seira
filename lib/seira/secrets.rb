@@ -2,37 +2,34 @@ require 'json'
 require 'base64'
 
 # Example usages:
-# seira staging specs secret set RAILS_ENV staging
+# seira staging specs secret set RAILS_ENV=staging
 # seira demo tracking secret unset DISABLE_SOME_FEATURE
 # seira staging importer secret list
-# TODO: Multiple secrets in one command
 # TODO: Can we avoid writing to disk completely and instead pipe in raw json?
 module Seira
   class Secrets
     VALID_ACTIONS = %w[get set unset list list-decoded create-pgbouncer-secret].freeze
     PGBOUNCER_SECRETS_NAME = 'pgbouncer-secrets'.freeze
 
-    attr_reader :app, :action, :key, :value, :args, :context
+    attr_reader :app, :action, :args, :context
 
     def initialize(app:, action:, args:, context:)
       @app = app
       @action = action
       @args = args
-      @key = args[0]
-      @value = args[1]
       @context = context
     end
 
     def run
       case action
       when 'get'
-        perform_key_validation
+        validate_single_key
         run_get
       when 'set'
-        perform_key_validation
+        validate_keys_and_values
         run_set
       when 'unset'
-        perform_key_validation
+        validate_single_key
         run_unset
       when 'list'
         run_list
@@ -40,8 +37,6 @@ module Seira
         run_list_decoded
       when 'create-pgbouncer-secret'
         run_create_pgbouncer_secret
-      when 'bootstrap-cluster'
-        run_bootstrap_cluster
       else
         fail "Unknown command encountered"
       end
@@ -69,9 +64,16 @@ module Seira
 
     private
 
-    def perform_key_validation
+    def validate_single_key
       if key.nil? || key.strip == ""
         puts "Please specify a key in all caps and with underscores"
+        exit(1)
+      end
+    end
+
+    def validate_keys_and_values
+      unless args.length > 0 && args.all? { |arg| /^[^=]+=[^=]+$/ =~ arg }
+        puts "Please list keys and values to set like KEY_ONE=value_one KEY_TWO=value_two"
         exit(1)
       end
     end
@@ -82,9 +84,8 @@ module Seira
     end
 
     def run_set
-      fail "Please specify a value as the third argument" if value.nil? || value.strip == ""
       secrets = fetch_current_secrets
-      secrets['data'][key] = Base64.encode64(value)
+      secrets['data'].merge!(key_value_map.transform_values { |value| Base64.encode64(value) })
       write_secrets(secrets: secrets)
     end
 
@@ -143,6 +144,14 @@ module Seira
       json = JSON.parse(json_string)
       fail "Unexpected Kind" unless json['kind'] == 'Secret'
       json
+    end
+
+    def key
+      args[0]
+    end
+
+    def key_value_map
+      args.map { |arg| arg.split('=') }.to_h
     end
   end
 end
