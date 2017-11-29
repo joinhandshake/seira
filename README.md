@@ -97,7 +97,9 @@ By using `seira staging app-name app apply`, Seira will find/replace the string 
 All secrets are stored in `appname-secrets` Secret object. They are expected to be used via `envFrom` in manifest files.
 
 `seira staging app-name secrets list`
-`seira staging app-name secrets set KEY value`
+
+`seira staging app-name secrets set KEY=value`
+
 `seira staging app-name secrets get KEY`
 
 ### Pods
@@ -105,6 +107,7 @@ All secrets are stored in `appname-secrets` Secret object. They are expected to 
 Pods can be listed and also exec'd into.
 
 `seira staging app-name pods list`
+
 `seira staging app-name pods run`
 
 ## Development
