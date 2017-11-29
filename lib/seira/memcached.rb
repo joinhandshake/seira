@@ -69,7 +69,7 @@ module Seira
       end
 
       file_name = write_config(values)
-      unique_name = "#{Seira::Random.color}-#{Seira::Random.animal}"
+      unique_name = Seira::Random.unique_name
       name = "#{app}-memcached-#{unique_name}"
       puts `helm install --namespace #{app} --name #{name} --wait -f #{file_name} stable/memcached`
 

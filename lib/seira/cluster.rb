@@ -55,7 +55,7 @@ module Seira
     private
 
     # Intended for use when spinning up a whole new cluster. It stores two main secrets
-    # in the default space that are intended to be copied into individual namespaces when 
+    # in the default space that are intended to be copied into individual namespaces when
     # new apps are built.
     def run_bootstrap
       dockercfg_location = args[0]

@@ -1,6 +1,10 @@
 # For random colors for resource installations via helm
 module Seira
   class Random
+    def self.unique_name
+      "#{color}-#{animal}"
+    end
+
     def self.color
       %w[
         red
