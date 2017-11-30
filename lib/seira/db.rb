@@ -37,7 +37,7 @@ module Seira
       storage = 10 # GB
       set_as_primary = false
 
-      name = "#{app}-#{Seira::Random.unique_name}"
+      name = "#{app}-#{Seira::Random.unique_name(existing_instances)}"
 
       create_command = "gcloud sql instances create #{name}"
 
@@ -116,7 +116,7 @@ module Seira
         Secrets.new(app: app, action: 'set', args: ["DATABASE_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
       end
       # Regardless of primary or not, store a URL for this db matching its unique name
-      Secrets.new(app: app, action: 'set', args: ["#{name.upcase}_DB_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
+      Secrets.new(app: app, action: 'set', args: ["#{name.underscore.upcase}_DB_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
     end
 
     def run_delete
@@ -129,7 +129,11 @@ module Seira
     end
 
     def run_list
-      puts(`gcloud sql instances list --uri`.split("\n").map { |uri| uri.split('/').last }.select { |name| name.start_with? "#{app}-" })
+      puts existing_instances
+    end
+
+    def existing_instances
+      `gcloud sql instances list --uri`.split("\n").map { |uri| uri.split('/').last }.select { |name| name.start_with? "#{app}-" }.map { |name| name.gsub(/^#{app}-/, '') }
     end
   end
 end

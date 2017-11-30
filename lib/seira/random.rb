@@ -1,8 +1,11 @@
 # For random colors for resource installations via helm
 module Seira
   class Random
-    def self.unique_name
-      "#{color}-#{animal}"
+    def self.unique_name(existing = [])
+      loop do
+        name = "#{color}-#{animal}"
+        return name unless existing.include? name
+      end
     end
 
     def self.color

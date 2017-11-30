@@ -35,11 +35,7 @@ module Seira
     private
 
     def run_list
-      list = `helm list`.split("\n")
-      filtered_list = list.select { |item| item.start_with?("#{app}-redis") }
-      filtered_list.each do |item|
-        puts item
-      end
+      puts existing_instances
     end
 
     def run_status
@@ -84,7 +80,7 @@ module Seira
       end
 
       file_name = write_config(values)
-      unique_name = Seira::Random.unique_name
+      unique_name = Seira::Random.unique_name(existing_instances)
       name = "#{app}-#{unique_name}"
       puts `helm install --namespace #{app} --name #{name} --wait -f #{file_name} stable/redis`
 
@@ -118,6 +114,10 @@ module Seira
         f.write(values.to_json)
       end
       file_name
+    end
+
+    def existing_instances
+      list = `helm list`.split("\n").select { |item| item.start_with?("#{app}-redis") }.map { |name| name.gsub(/^#{app}-redis-/, '') }
     end
   end
 end
