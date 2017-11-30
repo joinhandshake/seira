@@ -112,7 +112,7 @@ module Seira
 
       if set_as_primary
         Secrets.new(app: app, action: 'create-pgbouncer-secret', args: ['proxyuser', proxyuser_password], context: context).run
-        Secrets.new(app: app, action: 'set', args: ["DATABASE_URL=postgres://proxyuser:#{proxyuser_password}@appname-pgbouncer-service:6432"], context: context).run
+        Secrets.new(app: app, action: 'set', args: ["DATABASE_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
       end
     end
 
