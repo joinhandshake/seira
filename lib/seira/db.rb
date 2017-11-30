@@ -1,7 +1,7 @@
 require 'securerandom'
 
 module Seira
-  class Sql
+  class Db
     VALID_ACTIONS = %w[create delete list].freeze
 
     attr_reader :app, :action, :args, :context
