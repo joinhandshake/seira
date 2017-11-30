@@ -110,10 +110,13 @@ module Seira
         exit(1)
       end
 
+      # If setting as primary, update relevant secrets
       if set_as_primary
         Secrets.new(app: app, action: 'create-pgbouncer-secret', args: ['proxyuser', proxyuser_password], context: context).run
         Secrets.new(app: app, action: 'set', args: ["DATABASE_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
       end
+      # Regardless of primary or not, store a URL for this db matching its unique name
+      Secrets.new(app: app, action: 'set', args: ["#{name.upcase}_DB_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
     end
 
     def run_delete
