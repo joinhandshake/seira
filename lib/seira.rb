@@ -8,6 +8,7 @@ require 'seira/memcached'
 require 'seira/pods'
 require 'seira/proxy'
 require 'seira/random'
+require 'seira/db'
 require 'seira/redis'
 require 'seira/secrets'
 require 'seira/settings'
@@ -20,6 +21,7 @@ module Seira
     CATEGORIES = {
       'secrets' => Seira::Secrets,
       'pods' => Seira::Pods,
+      'db' => Seira::Db,
       'redis' => Seira::Redis,
       'memcached' => Seira::Memcached,
       'app' => Seira::App,
@@ -98,7 +100,7 @@ module Seira
     end
 
     def base_validations
-      # The first arg must always be the cluster. This ensures commands are not run by 
+      # The first arg must always be the cluster. This ensures commands are not run by
       # accident on the wrong kubernetes cluster or gcloud project.
       exit(1) unless Seira::Cluster.new(action: nil, args: nil, context: nil, settings: settings).switch(target_cluster: cluster, verbose: false)
       exit(0) if simple_cluster_change?
