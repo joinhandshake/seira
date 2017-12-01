@@ -126,7 +126,7 @@ module Seira
 
       # Clean up
       unless system("kubectl --namespace=#{app} delete pod #{temp_name}")
-        puts "Warning: failed to clean up pod"
+        puts "Warning: failed to clean up pod #{temp_name}"
       end
     end
 
