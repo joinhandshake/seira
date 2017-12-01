@@ -53,12 +53,10 @@ module Seira
 
     def run_connect
       # If a pod name is specified, connect to that pod; otherwise pick a random web pod
-      # TODO: allow connecting to a new temporary pod, similar to what `run` does
       target_pod_name = pod_name || fetch_pods(app: app, tier: 'web').sample&.dig('metadata', 'name')
 
       if target_pod_name
-        puts "Connecting to {target_pod_name}..."
-        system("kubectl exec -ti #{target_pod_name} --namespace=#{app} -- bash")
+        connect_to_pod(target_pod_name)
       else
         puts "Could not find web pod to connect to"
       end
@@ -79,8 +77,6 @@ module Seira
         break unless arg.start_with? '--'
         if arg.start_with? '--tier='
           tier = arg.split('=')[1]
-        elsif arg.start_with? '--container='
-          container_name = arg.split('=')[1]
         else
           puts "Warning: Unrecognized argument #{arg}"
         end
@@ -97,82 +93,55 @@ module Seira
         exit(1)
       end
 
-      # Use that template pod's configuration to create a Job
+      # Use that template pod's configuration to create a new temporary pod
       temp_name = "#{app}-temp-#{Random.unique_name}"
       spec = template_pod['spec']
-      job = {
-        apiVersion: 'batch/v1',
-        kind: 'Job',
-        spec: {
-          template: {
-            metadata: {
-              name: temp_name
-            },
-            spec: spec
-          }
-        },
+      temp_pod = {
+        apiVersion: template_pod['apiVersion'],
+        kind: 'Pod',
+        spec: spec,
         metadata: {
           name: temp_name
         }
       }
       spec['restartPolicy'] = 'Never'
-      container = spec['containers'].find { |c| c['name'] == container_name }
-      if container.nil?
-        puts "Could not find container #{container_name} in tier #{tier} to run command in"
-        exit(1)
-      end
-      container[:command] = [
-        '/bin/bash',
-        '-c',
-        command
-      ]
-      puts "Running command as job #{temp_name}"
-      unless system("kubectl --namespace=#{app} create -f - <<JSON\n#{job.to_json}\nJSON")
-        puts 'Command failed to run'
-        exit(1)
-      end
 
-      # The job is kicked off; get the pod it spawned
-      pod = fetch_pods('job-name' => temp_name).first
-      pod_name = pod['metadata']['name']
+      puts "Creating temporary pod #{temp_name}"
+      unless system("kubectl --namespace=#{app} create -f - <<JSON\n#{temp_pod.to_json}\nJSON")
+        puts 'Failed to create pod'
+        exit(1)
+      end
 
       # Check pod status until the container we want is ready
-      print 'Waiting for job to start...'
+      print 'Waiting for pod to start...'
       loop do
-        status = pod.dig('status', 'containerStatuses')&.find { |c| c['name'] == container_name }
-        break if status && status['ready']
-        terminated_status = status&.dig('state', 'terminated')
-        if terminated_status
-          if terminated_status['message']
-            puts "Job failed: #{terminated_status['message']}"
-          elsif terminated_status['reason'] != 'Completed'
-            puts "Job failed: #{terminated_status['reason']}"
-          end
-          break
-        end
+        pod = JSON.parse(`kubectl --namespace=#{app} get pods/#{temp_name} -o json`)
+        break if pod['status']['phase'] == 'Running'
         print '.'
         sleep 1
-        pod = JSON.parse(`kubectl --namespace=#{app} get pods/#{pod_name} -o json`)
       end
       print "\n"
 
-      # Show the logs
-      system("kubectl --namespace=#{app} logs --follow #{pod_name} --container=#{container_name}")
+      # Connect to the pod, running the specified command
+      connect_to_pod(temp_name, command)
 
       # Clean up
-      unless system("kubectl --namespace=#{app} delete job #{temp_name}")
-        puts 'Warning: Failed to clean up job'
-      end
-      fetch_pods('job-name' => temp_name).each do |p|
-        unless system("kubectl --namespace=#{app} delete pod #{p['metadata']['name']}")
-          puts "Warning: failed to clean up pod #{p['metadata']['name']}"
-        end
+      unless system("kubectl --namespace=#{app} delete pod #{temp_name}")
+        puts "Warning: failed to clean up pod"
       end
     end
 
     def fetch_pods(filters)
       filter_string = filters.map { |k, v| "#{k}=#{v}" }.join(',')
       JSON.parse(`kubectl get pods --namespace=#{app} -o json --selector=#{filter_string}`)['items']
+    end
+
+    def connect_to_pod(name, command = 'bash')
+      puts "Connecting to #{name}..."
+      unless system("kubectl exec -ti #{name} --namespace=#{app} -- #{command}")
+        puts 'Failed to connect'
+        exit(1)
+      end
     end
   end
 end
