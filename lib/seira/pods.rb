@@ -161,9 +161,9 @@ module Seira
       unless system("kubectl --namespace=#{app} delete job #{temp_name}")
         puts 'Warning: Failed to clean up job'
       end
-      fetch_pods('job-name' => temp_name).each do |pod|
-        unless system("kubectl --namespace=#{app} delete pod #{pod['metadata']['name']}")
-          puts "Warning: failed to clean up pod #{pod['metadata']['name']}"
+      fetch_pods('job-name' => temp_name).each do |p|
+        unless system("kubectl --namespace=#{app} delete pod #{p['metadata']['name']}")
+          puts "Warning: failed to clean up pod #{p['metadata']['name']}"
         end
       end
     end
