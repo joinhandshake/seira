@@ -111,7 +111,7 @@ module Seira
         exit(1)
       end
 
-      # Check pod status until the container we want is ready
+      # Check pod status until it's ready to connect to
       print 'Waiting for pod to start...'
       loop do
         pod = JSON.parse(`kubectl --namespace=#{app} get pods/#{temp_name} -o json`)
