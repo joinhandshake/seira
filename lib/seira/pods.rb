@@ -2,7 +2,7 @@ require 'json'
 
 module Seira
   class Pods
-    VALID_ACTIONS = %w[list delete logs top run].freeze
+    VALID_ACTIONS = %w[list delete logs top run connect].freeze
 
     attr_reader :app, :action, :args, :pod_name, :context
 
@@ -15,7 +15,6 @@ module Seira
     end
 
     def run
-      # TODO: Some options: 'top', 'kill', 'delete', 'logs'
       case action
       when 'list'
         run_list
@@ -53,6 +52,8 @@ module Seira
     end
 
     def run_connect
+      # If a pod name is specified, connect to that pod; otherwise pick a random web pod
+      # TODO: allow connecting to a new temporary pod, similar to what `run` does
       target_pod_name = pod_name || fetch_pods(app: app, tier: 'web').sample&.dig('metadata', 'name')
 
       if target_pod_name
@@ -158,6 +159,7 @@ module Seira
       # Show the logs
       system("kubectl --namespace=#{app} logs --follow #{pod_name} --container=#{container_name}")
 
+      # Clean up
       unless system("kubectl --namespace=#{app} delete job #{temp_name}")
         puts 'Warning: Failed to clean up job'
       end
