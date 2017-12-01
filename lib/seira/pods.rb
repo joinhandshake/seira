@@ -65,7 +65,6 @@ module Seira
     def run_run
       # Set defaults
       tier = 'web'
-      container_name = app
 
       # Loop through args and process any that aren't just the command to run
       loop do
