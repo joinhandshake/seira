@@ -56,7 +56,6 @@ module Seira
         antelope
         ape
         armadillo
-        ass
         avocet
         axolotl
         baboon
@@ -381,6 +380,7 @@ module Seira
         uakari
         uguisu
         umbrellabird
+        unicorn
         viper
         vulture
         wallaby
