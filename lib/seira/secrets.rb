@@ -72,7 +72,7 @@ module Seira
     end
 
     def validate_keys_and_values
-      if args.empty? || !args.all? { |arg| /^[^=]+=[^=]+$/ =~ arg }
+      if args.empty? || !args.all? { |arg| /^[^=]+=.+$/ =~ arg }
         puts "Please list keys and values to set like KEY_ONE=value_one KEY_TWO=value_two"
         exit(1)
       end
@@ -151,7 +151,10 @@ module Seira
     end
 
     def key_value_map
-      args.map { |arg| arg.split('=') }.to_h
+      args.map do |arg|
+        equals_index = arg.index('=')
+        [arg[0..equals_index - 1], arg[equals_index + 1..-1]]
+      end.to_h
     end
   end
 end

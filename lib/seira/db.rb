@@ -116,7 +116,7 @@ module Seira
         Secrets.new(app: app, action: 'set', args: ["DATABASE_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
       end
       # Regardless of primary or not, store a URL for this db matching its unique name
-      Secrets.new(app: app, action: 'set', args: ["#{name.underscore.upcase}_DB_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
+      Secrets.new(app: app, action: 'set', args: ["#{name.tr('-', '_').upcase}_DB_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
     end
 
     def run_delete

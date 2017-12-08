@@ -137,10 +137,7 @@ module Seira
 
     def connect_to_pod(name, command = 'bash')
       puts "Connecting to #{name}..."
-      unless system("kubectl exec -ti #{name} --namespace=#{app} -- #{command}")
-        puts 'Failed to connect'
-        exit(1)
-      end
+      system("kubectl exec -ti #{name} --namespace=#{app} -- #{command}")
     end
   end
 end
