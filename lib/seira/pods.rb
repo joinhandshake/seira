@@ -86,7 +86,7 @@ module Seira
       command = args.join(' ')
 
       # Find a 'template' pod from the proper tier
-      template_pod = fetch_pods(app: app, tier: 'web').first
+      template_pod = fetch_pods(app: app, tier: tier).first
       if template_pod.nil?
         puts "Unable to find #{tier} tier pod to copy config from"
         exit(1)
