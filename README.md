@@ -1,6 +1,6 @@
 # Seira
 
-An opinionated library for building applications on Kubernetes. 
+An opinionated library for building applications on Kubernetes.
 
 This library builds a framework for doing deployments, secrets management, managing memcached, managing redis, managing and accessing pods, bootstraping new apps and clusters, and more. It makes decisions about how to run the apps and cluster to make managing the cluster easier.
 
@@ -77,6 +77,12 @@ This specification is read in and used to determine what `gcloud` context to use
 ### Manifest Files
 
 Seira expects your Kubernetes manifests to exist in the "kubernetes/<cluster>/<app>" directory. When a deploy is run on `foo` app in `staging` cluster, it looks to `kubernetes/staging/foo` directory for the manifest files.
+
+### Assumptions
+
+- Each app has all its objects contained in a namespace, named after the app
+- Each app has one or more deployments, and a deployment and all pods created by that deployment have a `tier` label matching the name of the deployment
+- If using a SQL database (currently only postgresql is supported), pgbouncer is used for connection pooling, and the app uses the secret `DATABASE_URL` to connect and authenticate to the database
 
 ### Initial Setup
 
