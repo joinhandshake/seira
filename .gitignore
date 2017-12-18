@@ -10,3 +10,6 @@
 
 # rspec failure tracking
 .rspec_status
+
+# don't commit app-specific config
+.seira.yml
