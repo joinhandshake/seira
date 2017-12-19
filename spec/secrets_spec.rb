@@ -32,7 +32,7 @@ describe Seira::Secrets do
       new_secrets: {
         'kind' => 'Secret',
         'data' => {
-          'FOO' => Base64.encode64('blah').chomp
+          'FOO' => Base64.encode64('blah').delete("\n")
         }
       }
     )
@@ -43,7 +43,7 @@ describe Seira::Secrets do
       old_secrets: {
         'kind' => 'Secret',
         'data' => {
-          'FOO' => Base64.encode64('old_value').chomp
+          'FOO' => Base64.encode64('old_value').delete("\n")
         }
       },
       action: 'set',
@@ -51,7 +51,7 @@ describe Seira::Secrets do
       new_secrets: {
         'kind' => 'Secret',
         'data' => {
-          'FOO' => Base64.encode64('new_value').chomp
+          'FOO' => Base64.encode64('new_value').delete("\n")
         }
       }
     )
@@ -62,7 +62,7 @@ describe Seira::Secrets do
       old_secrets: {
         'kind' => 'Secret',
         'data' => {
-          'OTHER_KEY' => Base64.encode64('other_value').chomp
+          'OTHER_KEY' => Base64.encode64('other_value').delete("\n")
         }
       },
       action: 'set',
@@ -70,8 +70,8 @@ describe Seira::Secrets do
       new_secrets: {
         'kind' => 'Secret',
         'data' => {
-          'OTHER_KEY' => Base64.encode64('other_value').chomp,
-          'FOO' => Base64.encode64('blah').chomp
+          'OTHER_KEY' => Base64.encode64('other_value').delete("\n"),
+          'FOO' => Base64.encode64('blah').delete("\n")
         }
       }
     )
@@ -88,8 +88,8 @@ describe Seira::Secrets do
       new_secrets: {
         'kind' => 'Secret',
         'data' => {
-          'FOO' => Base64.encode64('blah').chomp,
-          'BAR' => Base64.encode64('asdf').chomp
+          'FOO' => Base64.encode64('blah').delete("\n"),
+          'BAR' => Base64.encode64('asdf').delete("\n")
         }
       }
     )
