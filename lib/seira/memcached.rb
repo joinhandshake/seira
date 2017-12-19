@@ -49,8 +49,8 @@ module Seira
       values = {
         resources: {
           requests: {
-            cpu: '1', # roughly 1 vCPU in both AWS and GCP terms
-            memory: '5Gi' # memcached is in-memory - give it a lot
+            memory: '500Mi',
+            cpu: '50m'
           }
         }
       }
@@ -61,6 +61,36 @@ module Seira
           values[:resources][:requests][:memory] = arg.split('=')[1]
         elsif arg.start_with?('--cpu=')
           values[:resources][:requests][:cpu] = arg.split('=')[1]
+        elsif arg.start_with?('--size=')
+          size = arg.split('=')[1]
+          case size
+          when '1'
+            values[:resources][:requests][:memory] = '100Mi'
+            values[:resources][:requests][:cpu] = '50m'
+          when '2'
+            values[:resources][:requests][:memory] = '250Mi'
+            values[:resources][:requests][:cpu] = '100m'
+          when '3'
+            values[:resources][:requests][:memory] = '500Mi'
+            values[:resources][:requests][:cpu] = '200m'
+          when '4'
+            values[:resources][:requests][:memory] = '1Gi'
+            values[:resources][:requests][:cpu] = '500m'
+          when '5'
+            values[:resources][:requests][:memory] = '2Gi'
+            values[:resources][:requests][:cpu] = '500m'
+          when '6'
+            values[:resources][:requests][:memory] = '5Gi'
+            values[:resources][:requests][:cpu] = '1'
+          when '7'
+            values[:resources][:requests][:memory] = '10Gi'
+            values[:resources][:requests][:cpu] = '2'
+          when '8'
+            values[:resources][:requests][:memory] = '50Gi'
+            values[:resources][:requests][:cpu] = '4'
+          else
+            fail "There is no size option '#{size}'"
+          end
         end
       end
 
