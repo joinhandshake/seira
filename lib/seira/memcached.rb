@@ -36,7 +36,7 @@ module Seira
     end
 
     private
-    
+
     def run_help
       puts SUMMARY
       puts "\n\n"
