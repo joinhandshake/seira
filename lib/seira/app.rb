@@ -6,7 +6,7 @@ require 'fileutils'
 # seira staging specs app bootstrap
 module Seira
   class App
-    VALID_ACTIONS = %w[bootstrap apply upgrade restart scale].freeze
+    VALID_ACTIONS = %w[help bootstrap apply restart scale].freeze
     SUMMARY = "Bootstrap, scale, configure, restart, your apps.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -20,12 +20,12 @@ module Seira
 
     def run
       case action
+      when 'help'
+        run_help
       when 'bootstrap'
         run_bootstrap
       when 'apply'
         run_apply
-      when 'upgrade'
-        run_upgrade
       when 'restart'
         run_restart
       when 'scale'
@@ -33,6 +33,16 @@ module Seira
       else
         fail "Unknown command encountered"
       end
+    end
+
+    def run_help
+      puts SUMMARY
+      puts "\n\n"
+      puts "Possible actions:\n\n"
+      puts "bootstrap: Create new app with main secret, cloudsql secret, and gcr secret in the new namespace."
+      puts "apply: Apply the configuration in kubernetes/<cluster-name>/<app-name> using REVISION environment variable to find/replace REVISION in the YAML."
+      puts "restart: TODO."
+      puts "scale: Scales the given tier deployment to the specified number of instances."
     end
 
     def run_restart

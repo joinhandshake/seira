@@ -2,7 +2,7 @@ require 'securerandom'
 
 module Seira
   class Db
-    VALID_ACTIONS = %w[create delete list].freeze
+    VALID_ACTIONS = %w[help create delete list].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -16,6 +16,8 @@ module Seira
 
     def run
       case action
+      when 'help'
+        run_help
       when 'create'
         run_create
       when 'delete'
@@ -28,6 +30,12 @@ module Seira
     end
 
     private
+
+    def run_help
+      puts SUMMARY
+      puts "\n\n"
+      puts "TODO"
+    end
 
     def run_create
       # We allow overriding the version, so you could specify a mysql version but much of the

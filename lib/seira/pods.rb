@@ -2,7 +2,7 @@ require 'json'
 
 module Seira
   class Pods
-    VALID_ACTIONS = %w[list delete logs top run connect].freeze
+    VALID_ACTIONS = %w[help list delete logs top run connect].freeze
     SUMMARY = "Manage your application's pods.".freeze
 
     attr_reader :app, :action, :args, :pod_name, :context
@@ -17,6 +17,8 @@ module Seira
 
     def run
       case action
+      when 'help'
+        run_help
       when 'list'
         run_list
       when 'delete'
@@ -35,6 +37,12 @@ module Seira
     end
 
     private
+
+    def run_help
+      puts SUMMARY
+      puts "\n\n"
+      puts "TODO"
+    end
 
     def run_list
       puts `kubectl get pods --namespace=#{app} -o wide`

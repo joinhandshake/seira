@@ -3,7 +3,7 @@ require 'base64'
 
 module Seira
   class Redis
-    VALID_ACTIONS = %w[list status credentials create delete].freeze
+    VALID_ACTIONS = %w[help list status credentials create delete].freeze
     SUMMARY = "Manage your Helm Redis instances.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -18,6 +18,8 @@ module Seira
     # TODO: logs, upgrades?, backups, restores, CLI connection
     def run
       case action
+      when 'help'
+        run_help
       when 'list'
         run_list
       when 'status'
@@ -34,6 +36,12 @@ module Seira
     end
 
     private
+
+    def run_help
+      puts SUMMARY
+      puts "\n\n"
+      puts "TODO"
+    end
 
     def run_list
       puts existing_instances
