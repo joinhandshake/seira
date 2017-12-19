@@ -85,7 +85,7 @@ module Seira
 
     def run_set
       secrets = fetch_current_secrets
-      secrets['data'].merge!(key_value_map.transform_values { |value| Base64.encode64(value) })
+      secrets['data'].merge!(key_value_map.transform_values { |value| Base64.encode64(value).chomp })
       write_secrets(secrets: secrets)
     end
 

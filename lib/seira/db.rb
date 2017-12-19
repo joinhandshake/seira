@@ -73,7 +73,7 @@ module Seira
       end
 
       # Set the root user's password to something secure
-      root_password = SecureRandom.base64(32)
+      root_password = SecureRandom.urlsafe_base64(32)
       if system("gcloud sql users set-password postgres '' --instance=#{name} --password=#{root_password}")
         puts "Set root password to #{root_password}"
       else
@@ -82,7 +82,7 @@ module Seira
       end
 
       # Create proxyuser with secure password
-      proxyuser_password = SecureRandom.base64(32)
+      proxyuser_password = SecureRandom.urlsafe_base64(32)
       if system("gcloud sql users create proxyuser '' --instance=#{name} --password=#{proxyuser_password}")
         puts "Created proxyuser with password #{proxyuser_password}"
       else
@@ -116,7 +116,8 @@ module Seira
         Secrets.new(app: app, action: 'set', args: ["DATABASE_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
       end
       # Regardless of primary or not, store a URL for this db matching its unique name
-      Secrets.new(app: app, action: 'set', args: ["#{name.tr('-', '_').upcase}_DB_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432"], context: context).run
+      env_name = name.tr('-', '_').upcase
+      Secrets.new(app: app, action: 'set', args: ["#{env_name}_DB_URL=postgres://proxyuser:#{proxyuser_password}@#{app}-pgbouncer-service:6432", "#{env_name}_ROOT_PASSWORD=#{root_password}"], context: context).run
     end
 
     def run_delete
