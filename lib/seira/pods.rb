@@ -65,6 +65,7 @@ module Seira
     def run_run
       # Set defaults
       tier = 'web'
+      clear_commands = false
 
       # Loop through args and process any that aren't just the command to run
       loop do
@@ -76,6 +77,8 @@ module Seira
         break unless arg.start_with? '--'
         if arg.start_with? '--tier='
           tier = arg.split('=')[1]
+        elsif arg.start_with? '--clear-commands='
+          clear_commands = %w[true yes t y].include? arg.split('=')[1]
         else
           puts "Warning: Unrecognized argument #{arg}"
         end
@@ -104,6 +107,11 @@ module Seira
         }
       }
       spec['restartPolicy'] = 'Never'
+      if clear_commands
+        spec['containers'].each do |container|
+          container['command'] = ['bash', '-c', 'tail -f /dev/null']
+        end
+      end
 
       puts "Creating temporary pod #{temp_name}"
       unless system("kubectl --namespace=#{app} create -f - <<JSON\n#{temp_pod.to_json}\nJSON")
