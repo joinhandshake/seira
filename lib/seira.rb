@@ -67,7 +67,6 @@ module Seira
     end
 
     def run
-      puts category
       if category == 'help'
         run_base_help
         exit(0)
