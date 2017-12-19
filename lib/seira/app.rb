@@ -7,6 +7,7 @@ require 'fileutils'
 module Seira
   class App
     VALID_ACTIONS = %w[bootstrap apply upgrade restart scale].freeze
+    SUMMARY = "Bootstrap, scale, configure, restart, your apps.".freeze
 
     attr_reader :app, :action, :args, :context
 

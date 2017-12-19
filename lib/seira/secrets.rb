@@ -10,6 +10,7 @@ module Seira
   class Secrets
     VALID_ACTIONS = %w[get set unset list list-decoded create-pgbouncer-secret].freeze
     PGBOUNCER_SECRETS_NAME = 'pgbouncer-secrets'.freeze
+    SUMMARY = "Manage your application's secrets and environment variables.".freeze
 
     attr_reader :app, :action, :args, :context
 

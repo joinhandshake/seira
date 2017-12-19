@@ -4,6 +4,7 @@ require 'base64'
 module Seira
   class Memcached
     VALID_ACTIONS = %w[list status credentials create delete].freeze
+    SUMMARY = "Manage your Helm Memcached instances.".freeze
 
     attr_reader :app, :action, :args, :context
 

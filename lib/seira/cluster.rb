@@ -6,6 +6,7 @@ require 'fileutils'
 module Seira
   class Cluster
     VALID_ACTIONS = %w[bootstrap].freeze
+    SUMMARY = "For managing whole clusters.".freeze
 
     attr_reader :action, :args, :context, :settings
 

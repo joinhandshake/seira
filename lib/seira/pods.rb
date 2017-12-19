@@ -3,6 +3,7 @@ require 'json'
 module Seira
   class Pods
     VALID_ACTIONS = %w[list delete logs top run connect].freeze
+    SUMMARY = "Manage your application's pods.".freeze
 
     attr_reader :app, :action, :args, :pod_name, :context
 

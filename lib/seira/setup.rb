@@ -3,6 +3,8 @@ require 'json'
 
 module Seira
   class Setup
+    SUMMARY = "Set up your local CLI with the right project and cluster configuration.".freeze
+
     attr_reader :arg, :settings
 
     def initialize(arg:, settings:)

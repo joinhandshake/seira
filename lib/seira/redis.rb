@@ -4,6 +4,7 @@ require 'base64'
 module Seira
   class Redis
     VALID_ACTIONS = %w[list status credentials create delete].freeze
+    SUMMARY = "Manage your Helm Redis instances.".freeze
 
     attr_reader :app, :action, :args, :context
 
@@ -81,7 +82,7 @@ module Seira
 
       file_name = write_config(values)
       unique_name = Seira::Random.unique_name(existing_instances)
-      name = "#{app}-#{unique_name}"
+      name = "#{app}-redis-#{unique_name}"
       puts `helm install --namespace #{app} --name #{name} --wait -f #{file_name} stable/redis`
 
       File.delete(file_name)
@@ -92,7 +93,7 @@ module Seira
     end
 
     def run_delete
-      to_delete = "#{app}-#{args[0]}"
+      to_delete = "#{app}-redis-#{args[0]}"
 
       exit(1) unless HighLine.agree("Are you sure you want to delete #{to_delete}? If any apps are using this redis instance, they will break.")
 

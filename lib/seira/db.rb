@@ -3,6 +3,7 @@ require 'securerandom'
 module Seira
   class Db
     VALID_ACTIONS = %w[create delete list].freeze
+    SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
     attr_reader :app, :action, :args, :context
 
