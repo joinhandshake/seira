@@ -102,8 +102,7 @@ module Seira
       File.delete(file_name)
 
       puts "To get status: 'seira #{context[:cluster]} #{app} memcached status #{unique_name}'"
-      puts "To get credentials for storing in app secrets: 'siera #{context[:cluster]} #{app} memcached credentials #{unique_name}'"
-      puts "Service URI for this memcached instance: 'memcached://#{name}:11211'."
+      puts "Service URI for this memcached instance: 'memcached://#{name}-memcached:11211'."
     end
 
     def run_delete
