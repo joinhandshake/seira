@@ -1,5 +1,8 @@
 # Seira
 
+[![Gem Version](https://badge.fury.io/rb/seira.svg)](https://badge.fury.io/rb/seira)
+[![Build Status](https://travis-ci.org/joinhandshake/seira.svg?branch=master)](https://travis-ci.org/joinhandshake/seira)
+
 An opinionated library for building applications on Kubernetes.
 
 This library builds a framework for doing deployments, secrets management, managing memcached, managing redis, managing and accessing pods, bootstraping new apps and clusters, and more. It makes decisions about how to run the apps and cluster to make managing the cluster easier.
