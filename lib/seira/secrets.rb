@@ -8,8 +8,9 @@ require 'base64'
 # TODO: Can we avoid writing to disk completely and instead pipe in raw json?
 module Seira
   class Secrets
-    VALID_ACTIONS = %w[get set unset list list-decoded create-pgbouncer-secret].freeze
+    VALID_ACTIONS = %w[help get set unset list list-decoded create-pgbouncer-secret].freeze
     PGBOUNCER_SECRETS_NAME = 'pgbouncer-secrets'.freeze
+    SUMMARY = "Manage your application's secrets and environment variables.".freeze
 
     attr_reader :app, :action, :args, :context
 
@@ -22,6 +23,8 @@ module Seira
 
     def run
       case action
+      when 'help'
+        run_help
       when 'get'
         validate_single_key
         run_get
@@ -63,6 +66,12 @@ module Seira
     end
 
     private
+
+    def run_help
+      puts SUMMARY
+      puts "\n\n"
+      puts "TODO"
+    end
 
     def validate_single_key
       if key.nil? || key.strip == ""

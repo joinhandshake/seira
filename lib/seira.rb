@@ -42,7 +42,9 @@ module Seira
 
       # The cluster and proxy command are not specific to any app, so that
       # arg is not in the ARGV array and should be skipped over
-      if ARGV[1] == 'cluster'
+      if ARGV[0] == 'help'
+        @category = reversed_args.pop
+      elsif ARGV[1] == 'cluster'
         cluster = reversed_args.pop
         @category = reversed_args.pop
         @action = reversed_args.pop
@@ -65,7 +67,10 @@ module Seira
     end
 
     def run
-      if category == 'setup'
+      if category == 'help'
+        run_base_help
+        exit(0)
+      elsif category == 'setup'
         Seira::Setup.new(arg: cluster, settings: settings).run
         exit(0)
       end
@@ -122,6 +127,17 @@ module Seira
 
     def simple_cluster_change?
       app.nil? && category.nil? # Special case where user is simply changing environments
+    end
+
+    def run_base_help
+      puts 'Seira is a library for managing Kubernetes as a PaaS.'
+      puts 'All commands take the following form: `seira <cluster-name> <app-name> <category> <action> <args...>`'
+      puts 'For example, `seira staging foo-app secrets list`'
+      puts "Possible categories: \n\n"
+      CATEGORIES.each do |key, klass|
+        puts "#{key}: #{klass::SUMMARY}"
+      end
+      puts "\nTo get more help for a specific category, run `seira <cluster-name> <app-name> <category> help` command"
     end
   end
 end

@@ -5,7 +5,8 @@ require 'fileutils'
 # Example usages:
 module Seira
   class Cluster
-    VALID_ACTIONS = %w[bootstrap].freeze
+    VALID_ACTIONS = %w[help bootstrap].freeze
+    SUMMARY = "For managing whole clusters.".freeze
 
     attr_reader :action, :args, :context, :settings
 
@@ -18,6 +19,8 @@ module Seira
 
     def run
       case action
+      when 'help'
+        run_help
       when 'bootstrap'
         run_bootstrap
       else
