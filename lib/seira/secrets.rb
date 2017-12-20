@@ -123,7 +123,7 @@ module Seira
     def run_create_pgbouncer_secret
       db_user = args[0]
       db_password = args[1]
-      write_secrets(secrets: { DB_USER: db_user, DB_PASSWORD: db_password }, secret_name: PGBOUNCER_SECRETS_NAME)
+      puts `kubectl create secret generic #{PGBOUNCER_SECRETS_NAME} --namespace #{app} --from-literal=DB_USER=#{db_user} --from-literal=DB_PASSWORD=#{db_password}`
     end
 
     # In the normal case the secret we are updating is just main_secret_name,
