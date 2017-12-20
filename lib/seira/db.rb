@@ -107,8 +107,6 @@ module Seira
         expect "Password for user postgres:"
         send "#{root_password}\\r"
         expect "postgres=>"
-        send "REVOKE cloudsqlsuperuser FROM proxyuser;\\r"
-        expect "postgres=>"
         send "ALTER ROLE proxyuser NOCREATEDB NOCREATEROLE;\\r"
         expect "postgres=>"
       BASH
