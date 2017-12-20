@@ -48,16 +48,18 @@ module Seira
       # TODO: Enable metrics
       values = {
         persistence: {
-          size: '32Gi'
+          size: '1Gi'
         },
         resources: {
           requests: {
-            cpu: '2', # roughly 2 vCPU in both AWS and GCP terms
-            memory: '8Gi' # redis is in-memory - give it a lot
+            cpu: '50m',
+            memory: '50Mi'
           }
         }
       }
 
+      # Redis is single-threaded, thus only one CPU is needed? Primary/replica
+      # is needed for further throughput
       args.each do |arg|
         puts "Applying arg #{arg} to values"
         if arg.start_with?('--memory=')
@@ -70,9 +72,41 @@ module Seira
           size = arg.split('=')[1]
           case size
           when '1'
-            values[:resources][:requests][:memory] = '100Mi' # 100mb
+            values[:resources][:requests][:memory] = '50Mi'
+            values[:persistence][:size] = '1Gi'
+            values[:resources][:requests][:cpu] = '50m'
+          when '2'
+            values[:resources][:requests][:memory] = '100Mi'
+            values[:persistence][:size] = '1Gi'
+            values[:resources][:requests][:cpu] = '100m'
+          when '3'
+            values[:resources][:requests][:memory] = '250Mi'
+            values[:persistence][:size] = '1Gi'
+            values[:resources][:requests][:cpu] = '200m'
+          when '4'
+            values[:resources][:requests][:memory] = '500Mi'
+            values[:persistence][:size] = '1Gi'
+            values[:resources][:requests][:cpu] = '500m'
+          when '5'
+            values[:resources][:requests][:memory] = '1Gi'
             values[:persistence][:size] = '5Gi'
-            values[:resources][:requests][:cpu] = '100m' # .1 cpu
+            values[:resources][:requests][:cpu] = '1'
+          when '6'
+            values[:resources][:requests][:memory] = '2Gi'
+            values[:persistence][:size] = '5Gi'
+            values[:resources][:requests][:cpu] = '1'
+          when '7'
+            values[:resources][:requests][:memory] = '5Gi'
+            values[:persistence][:size] = '5Gi'
+            values[:resources][:requests][:cpu] = '1'
+          when '8'
+            values[:resources][:requests][:memory] = '10Gi'
+            values[:persistence][:size] = '20Gi'
+            values[:resources][:requests][:cpu] = '1'
+          when '9'
+            values[:resources][:requests][:memory] = '20Gi'
+            values[:persistence][:size] = '40Gi'
+            values[:resources][:requests][:cpu] = '1'
           else
             fail "There is no size option '#{size}'"
           end
