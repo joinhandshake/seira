@@ -4,4 +4,8 @@ RSpec.describe Seira do
   it "has a version number" do
     expect(Seira::VERSION).not_to be nil
   end
+
+  it "has Seira::Db::Create" do
+    expect(Seira::Db::Create).not_to be_nil
+  end
 end
