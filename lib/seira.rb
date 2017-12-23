@@ -64,7 +64,6 @@ module Seira
       end
 
       @cluster = @settings.full_cluster_name_for_shorthand(cluster)
-      puts @cluster
       @project = @settings.project_for_cluster(@cluster)
     end
 

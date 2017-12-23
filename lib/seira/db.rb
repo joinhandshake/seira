@@ -40,7 +40,7 @@ module Seira
     end
 
     def run_create
-      Gcp::Db::Create.new(app: app, action: action, args: args, context: context).run(existing_instances)
+      Seira::Db::Create.new(app: app, action: action, args: args, context: context).run(existing_instances)
     end
 
     def run_delete
