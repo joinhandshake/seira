@@ -46,7 +46,7 @@ module Seira
     end
 
     def run_restart
-      # TODO
+      run_apply(restart: true)
     end
 
     private
@@ -60,7 +60,7 @@ module Seira
     end
 
     # Kube vanilla based upgrade
-    def run_apply
+    def run_apply(restart: false)
       destination = "tmp/#{context[:cluster]}/#{app}"
       revision = ENV['REVISION']
 
@@ -72,6 +72,10 @@ module Seira
       end
 
       replacement_hash = { 'REVISION' => revision }
+
+      if restart
+        replacement_hash['RESTARTED_AT_VALUE'] = Time.now.to_s
+      end
 
       replacement_hash.each do |k, v|
         next unless v.nil? || v == ''
