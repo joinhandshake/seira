@@ -95,8 +95,8 @@ module Seira
 
           # Make HA if asked for
           create_command += " --availability-type=REGIONAL" if make_highly_available
-        else 
-          create_command += " --master-instance-name=#{replica_for}" 
+        else
+          create_command += " --master-instance-name=#{replica_for}"
           # We don't need to wait for it to finish to move ahead if it's a replica, as we don't
           # make any changes to the database itself
           create_command += " --async"
@@ -180,8 +180,7 @@ module Seira
       end
 
       def write_database_env(key:, db_user:, db_password:)
-        env_name = name.tr('-', '_').upcase
-        Secrets.new(app: app, action: 'set', args: ["#{env_name}_DB_URL=postgres://#{db_user}:#{db_password}@#{pgbouncer_service_name}:6432"], context: context).run
+        Secrets.new(app: app, action: 'set', args: ["#{key}=postgres://#{db_user}:#{db_password}@#{pgbouncer_service_name}:6432"], context: context).run
       end
 
       def pgbouncer_secret_name
