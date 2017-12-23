@@ -92,10 +92,12 @@ module Seira
 
           # Make HA if asked for
           create_command += " --availability-type=REGIONAL" if make_highly_available
+        else 
+          create_command += " --master-instance-name=#{replica_for}" 
+          # We don't need to wait for it to finish to move ahead if it's a replica, as we don't
+          # make any changes to the database itself
+          create_command += " --async"
         end
-
-        # Make a read-replica if asked for
-        create_command += " --master-instance-name=#{replica_for}" unless replica_for.nil?
 
         puts "Running: #{create_command}"
 
@@ -151,23 +153,32 @@ module Seira
       end
 
       def set_secrets
-        create_pgbouncer_secret
+        env_name = name.tr('-', '_').upcase
 
         # If setting as primary, update relevant secrets. Only primaries have root passwords.
         if set_as_primary
-          Secrets.new(app: app, action: 'set', args: ["DATABASE_URL=postgres://proxyuser:#{proxyuser_password}@#{pgbouncer_service_name}:6432"], context: context).run
+          create_pgbouncer_secret(db_user: 'proxyuser', db_password: proxyuser_password)
           Secrets.new(app: app, action: 'set', args: ["#{env_name}_ROOT_PASSWORD=#{root_password}"], context: context).run
+          write_database_env(key: "DATABASE_URL", db_user: 'proxyuser', db_password: proxyuser_password)
+          write_database_env(key: "#{env_name}_DB_URL", db_user: 'proxyuser', db_password: proxyuser_password)
+        else
+          # When creating a replica, we cannot manage users on the replica. We must manage the users on the primary, which the replica
+          # inherits. For now we will use the same credentials that the primary uses.
+          primary_uri = URI.parse(Secrets.new(app: app, action: 'get', args: [], context: context).get('DATABASE_URL'))
+          primary_user = primary_uri.user
+          primary_password = primary_uri.password
+          create_pgbouncer_secret(db_user: primary_user, db_password: primary_password)
+          write_database_env(key: "#{env_name}_DB_URL", db_user: primary_user, db_password: primary_password)
         end
-
-        # Regardless of primary or not, store a URL for this db matching its unique name
-        env_name = name.tr('-', '_').upcase
-        Secrets.new(app: app, action: 'set', args: ["#{env_name}_DB_URL=postgres://proxyuser:#{proxyuser_password}@#{pgbouncer_service_name}:6432"], context: context).run
       end
 
-      def create_pgbouncer_secret
-        db_user = args[0]
-        db_password = args[1]
+      def create_pgbouncer_secret(db_user:, db_password:)
         puts `kubectl create secret generic #{pgbouncer_secret_name} --namespace #{app} --from-literal=DB_USER=#{db_user} --from-literal=DB_PASSWORD=#{db_password}`
+      end
+
+      def write_database_env(key:, db_user:, db_password:)
+        env_name = name.tr('-', '_').upcase
+        Secrets.new(app: app, action: 'set', args: ["#{env_name}_DB_URL=postgres://#{db_user}:#{db_password}@#{pgbouncer_service_name}:6432"], context: context).run
       end
 
       def pgbouncer_secret_name

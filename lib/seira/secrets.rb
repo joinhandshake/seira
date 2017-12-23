@@ -63,6 +63,11 @@ module Seira
       "#{app}-secrets"
     end
 
+    def get(key)
+      secrets = fetch_current_secrets
+      Base64.decode64(secrets['data'][key])
+    end
+
     private
 
     def run_help
@@ -86,8 +91,7 @@ module Seira
     end
 
     def run_get
-      secrets = fetch_current_secrets
-      puts "#{key}: #{Base64.decode64(secrets['data'][key])}"
+      puts "#{key}: #{get(key)}"
     end
 
     def run_set
