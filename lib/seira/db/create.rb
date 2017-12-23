@@ -193,6 +193,10 @@ module Seira
         "#{name}-pgbouncer-service"
       end
 
+      def pgbouncer_tier
+        name.gsub("handshake-", "")
+      end
+
       def write_pgbouncer_yaml
         # TODO: Clean this up by moving into a proper templated yaml file
         pgbouncer_yaml = <<-FOO
@@ -224,7 +228,7 @@ metadata:
   namespace: #{app}
   labels:
     app: #{app}
-    tier: database
+    tier: #{pgbouncer_tier}
     database: #{name}
 spec:
   replicas: 1
@@ -238,7 +242,7 @@ spec:
     metadata:
       labels:
         app: #{app}
-        tier: database
+        tier: #{pgbouncer_tier}
         database: #{name}
     spec:
       containers:
@@ -304,7 +308,7 @@ metadata:
   namespace: #{app}
   labels:
     app: #{app}
-    tier: database
+    tier: #{pgbouncer_tier}
 spec:
   type: NodePort
   ports:
@@ -314,7 +318,7 @@ spec:
     nodePort: 0
   selector:
     app: #{app}
-    tier: database
+    tier: #{pgbouncer_tier}
     database: #{name}
 FOO
 
