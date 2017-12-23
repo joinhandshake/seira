@@ -47,6 +47,9 @@ module Seira
       name = "#{app}-#{args[0]}"
       if system("gcloud sql instances delete #{name}")
         puts "Successfully deleted sql instance #{name}"
+
+        # TODO: Automate the below
+        puts "Don't forget to delete the deployment, configmap, secret, and service for the pgbouncer instance."
       else
         puts "Failed to delete sql instance #{name}"
       end
