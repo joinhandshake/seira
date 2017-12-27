@@ -8,7 +8,7 @@ require 'base64'
 # TODO: Can we avoid writing to disk completely and instead pipe in raw json?
 module Seira
   class Secrets
-    VALID_ACTIONS = %w[help get set unset list list-decoded create-pgbouncer-secret].freeze
+    VALID_ACTIONS = %w[help get set unset list list-decoded].freeze
     PGBOUNCER_SECRETS_NAME = 'pgbouncer-secrets'.freeze
     SUMMARY = "Manage your application's secrets and environment variables.".freeze
 
@@ -65,7 +65,8 @@ module Seira
 
     def get(key)
       secrets = fetch_current_secrets
-      Base64.decode64(secrets['data'][key])
+      encoded_value = secrets.dig('data', key)
+      encoded_value.nil? ? nil : Base64.decode64(encoded_value)
     end
 
     private
@@ -73,7 +74,14 @@ module Seira
     def run_help
       puts SUMMARY
       puts "\n\n"
-      puts "TODO"
+      puts "Possible actions:\n\n"
+      puts "get: fetch the value of a secret: `secrets get PASSWORD`"
+      puts "set: set one or more secret values: `secrets set USERNAME=admin PASSWORD=asdf`"
+      puts "     to specify a value with spaces: `secrets set LIPSUM=\"Lorem ipsum\"`"
+      puts "     to specify a value with newlines: `secrets set RSA_KEY=\"$(cat key.pem)\"`"
+      puts "unset: remove a secret: `secrets unset PASSWORD`"
+      puts "list: list all secret keys and values"
+      puts "list: list all secret keys and values, and decode from base64"
     end
 
     def validate_single_key
@@ -91,7 +99,12 @@ module Seira
     end
 
     def run_get
-      puts "#{key}: #{get(key)}"
+      value = get(key)
+      if value.nil?
+        puts "Secret '#{key}' not found"
+      else
+        puts "#{key}: #{value}"
+      end
     end
 
     def run_set
