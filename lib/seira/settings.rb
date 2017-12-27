@@ -48,6 +48,10 @@ module Seira
       nil
     end
 
+    def project_for_cluster(cluster)
+      settings['seira']['clusters'][cluster]['project']
+    end
+
     private
 
     def parse_settings

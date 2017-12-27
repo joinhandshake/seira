@@ -30,7 +30,7 @@ module Seira
       'setup' => Seira::Setup
     }.freeze
 
-    attr_reader :cluster, :app, :category, :action, :args
+    attr_reader :project, :cluster, :app, :category, :action, :args
     attr_reader :settings
 
     # Pop from beginning repeatedly for the first 4 main args, and then take the remaining back to original order for
@@ -64,6 +64,7 @@ module Seira
       end
 
       @cluster = @settings.full_cluster_name_for_shorthand(cluster)
+      @project = @settings.project_for_cluster(@cluster)
     end
 
     def run
@@ -100,7 +101,9 @@ module Seira
 
     def passed_context
       {
-        cluster: cluster
+        cluster: cluster,
+        project: project,
+        default_zone: settings.default_zone
       }
     end
 

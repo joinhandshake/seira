@@ -38,8 +38,6 @@ module Seira
         run_list
       when 'list-decoded'
         run_list_decoded
-      when 'create-pgbouncer-secret'
-        run_create_pgbouncer_secret
       else
         fail "Unknown command encountered"
       end
@@ -65,6 +63,11 @@ module Seira
       "#{app}-secrets"
     end
 
+    def get(key)
+      secrets = fetch_current_secrets
+      Base64.decode64(secrets['data'][key])
+    end
+
     private
 
     def run_help
@@ -88,8 +91,7 @@ module Seira
     end
 
     def run_get
-      secrets = fetch_current_secrets
-      puts "#{key}: #{Base64.decode64(secrets['data'][key])}"
+      puts "#{key}: #{get(key)}"
     end
 
     def run_set
@@ -118,12 +120,6 @@ module Seira
       secrets['data'].each do |k, v|
         puts "#{k}: #{Base64.decode64(v)}"
       end
-    end
-
-    def run_create_pgbouncer_secret
-      db_user = args[0]
-      db_password = args[1]
-      puts `kubectl create secret generic #{PGBOUNCER_SECRETS_NAME} --namespace #{app} --from-literal=DB_USER=#{db_user} --from-literal=DB_PASSWORD=#{db_password}`
     end
 
     # In the normal case the secret we are updating is just main_secret_name,
