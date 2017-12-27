@@ -148,7 +148,8 @@ module Seira
 
     def find_and_replace_revision(source:, destination:, replacement_hash:)
       puts "Copying source yaml from #{source} to #{destination}"
-      FileUtils::mkdir_p destination # Create the nested directory
+      FileUtils.mkdir_p destination # Create the nested directory
+      FileUtils.rm_rf("#{destination}/.", secure: true) # Clean out old files from the tmp folder
       FileUtils.copy_entry source, destination
 
       # Iterate through each yaml file and find/replace and save
