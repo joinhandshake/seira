@@ -3,7 +3,7 @@ module Seira
     class Create
       attr_reader :app, :action, :args, :context
 
-      attr_reader :name, :version, :cpu, :memory, :storage, :set_as_primary, :replica_for, :make_highly_available
+      attr_reader :name, :version, :cpu, :memory, :storage, :replica_for, :make_highly_available
       attr_reader :root_password, :proxyuser_password
 
       def initialize(app:, action:, args:, context:)
@@ -18,7 +18,6 @@ module Seira
         @cpu = 1 # Number of CPUs
         @memory = 4 # GB
         @storage = 10 # GB
-        @set_as_primary = false
         @replica_for = nil
         @make_highly_available = false
 
@@ -58,8 +57,6 @@ module Seira
             @memory = arg.split('=')[1]
           elsif arg.start_with? '--storage='
             @storage = arg.split('=')[1]
-          elsif arg.start_with? '--set-as-primary='
-            @set_as_primary = %w[true yes t y].include?(arg.split('=')[1])
           elsif arg.start_with? '--primary='
             @replica_for = arg.split('=')[1] # TODO: Read secret to get it automatically
           elsif arg.start_with? '--highly-available'
@@ -69,11 +66,6 @@ module Seira
           else
             puts "Warning: Unrecognized argument '#{arg}'"
           end
-        end
-
-        if set_as_primary && !replica_for.nil?
-          puts "Cannot make a read-replica the primary database."
-          exit(1)
         end
 
         if make_highly_available && !replica_for.nil?
@@ -163,7 +155,7 @@ module Seira
         env_name = name.tr('-', '_').upcase
 
         # If setting as primary, update relevant secrets. Only primaries have root passwords.
-        if set_as_primary
+        if replica_for.nil?
           create_pgbouncer_secret(db_user: 'proxyuser', db_password: proxyuser_password)
           Secrets.new(app: app, action: 'set', args: ["#{env_name}_ROOT_PASSWORD=#{root_password}"], context: context).run
           write_database_env(key: "DATABASE_URL", db_user: 'proxyuser', db_password: proxyuser_password)
