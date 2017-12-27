@@ -61,7 +61,6 @@ module Seira
           elsif arg.start_with? '--set-as-primary='
             @set_as_primary = %w[true yes t y].include?(arg.split('=')[1])
           elsif arg.start_with? '--primary='
-            puts 'in the thing'
             @replica_for = arg.split('=')[1] # TODO: Read secret to get it automatically
           elsif arg.start_with? '--highly-available'
             @make_highly_available = true
@@ -106,7 +105,12 @@ module Seira
 
         # Create the sql instance with the specified/default parameters
         if system(create_command)
-          puts "Successfully created sql instance #{name}"
+          async_additional =
+            unless replica_for.nil?
+              ". Database is still being created and may take some time to be available."
+            end
+
+          puts "Successfully created sql instance #{name}#{async_additional}"
         else
           puts "Failed to create sql instance"
           exit(1)
