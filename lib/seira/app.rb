@@ -41,12 +41,12 @@ module Seira
       puts "Possible actions:\n\n"
       puts "bootstrap: Create new app with main secret, cloudsql secret, and gcr secret in the new namespace."
       puts "apply: Apply the configuration in kubernetes/<cluster-name>/<app-name> using REVISION environment variable to find/replace REVISION in the YAML."
-      puts "restart: TODO."
+      puts "restart: Forces a rolling deploy for any deployment making use of RESTARTED_AT_VALUE in the deployment."
       puts "scale: Scales the given tier deployment to the specified number of instances."
     end
 
     def run_restart
-      # TODO
+      run_apply(restart: true)
     end
 
     private
@@ -60,7 +60,7 @@ module Seira
     end
 
     # Kube vanilla based upgrade
-    def run_apply
+    def run_apply(restart: false)
       destination = "tmp/#{context[:cluster]}/#{app}"
       revision = ENV['REVISION']
 
@@ -72,6 +72,10 @@ module Seira
       end
 
       replacement_hash = { 'REVISION' => revision }
+
+      if restart
+        replacement_hash['RESTARTED_AT_VALUE'] = Time.now.to_s
+      end
 
       replacement_hash.each do |k, v|
         next unless v.nil? || v == ''
