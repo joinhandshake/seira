@@ -33,7 +33,7 @@ The `gem install seira` option may be preferred for shorter typing, or generatin
 
 ## Usage
 
-This library only currently works with `gcloud` and `kubectl`, meaning Google Container Engine and Kubernetes.
+This library only currently works with `gcloud` and `kubectl`, meaning Google Cloud Platform and Kubernetes.
 
 All commands follow a pattern:
 
@@ -79,7 +79,7 @@ This specification is read in and used to determine what `gcloud` context to use
 
 ### Manifest Files
 
-Seira expects your Kubernetes manifests to exist in the "kubernetes/<cluster>/<app>" directory. When a deploy is run on `foo` app in `staging` cluster, it looks to `kubernetes/staging/foo` directory for the manifest files.
+Seira expects your Kubernetes manifests to exist in the "kubernetes/cluster-name/app-name" directory. When a deploy is run on `foo` app in `staging` cluster, it looks to `kubernetes/staging/foo` directory for the manifest files.
 
 ### Assumptions
 
@@ -91,7 +91,46 @@ Seira expects your Kubernetes manifests to exist in the "kubernetes/<cluster>/<a
 
 In order to use Seira, an initial setup is needed. Use the `seira setup` command to set up each of your clusters in your configuration file.
 
-## Example functionality
+## Current Functionality
+
+All functionality is targeted to be a platform on top of Kubernetes that has a Heroku-like experience.
+
+### App
+
+* Bootstrap new applications
+* Apply new configurations to an application
+* Scale app tiers
+* Restart an application
+
+### Database (Postgres)
+
+* List postgres instances
+* Create new primary and automatically set the right secrets with configurability such as HA, CPU, Memory.
+* Create a new replica on the primary
+* Pgbouncer yaml generation for all new instances
+* Delete an instance
+
+### Memcached
+
+* List, delete memcached instances
+* Create new memcached instances with configurable CPU and Memory using Helm.
+
+### Redis
+
+* List, delete Redis instances
+* Create new Redis instances with configurable CPU and Memory using Helm.
+
+### Pods
+
+* List pods for a given app
+* Connect to a running pod to run commands
+* Run a one-off command such as `rails db:migrate`
+
+### Secrets
+
+* List, set, unset secrets
+
+## Example Usage
 
 ### Running Proxy UI
 
