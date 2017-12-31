@@ -1,10 +1,11 @@
 require 'securerandom'
 
-require_relative 'db/create.rb'
+require_relative 'db/create'
+require_relative 'db/ps'
 
 module Seira
   class Db
-    VALID_ACTIONS = %w[help create delete list].freeze
+    VALID_ACTIONS = %w[help create delete list restart ps].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -26,9 +27,25 @@ module Seira
         run_delete
       when 'list'
         run_list
+      when 'restart'
+        run_restart
+      when 'ps'
+        run_ps
       else
         fail "Unknown command encountered"
       end
+    end
+
+    # NOTE: Relies on the pgbouncer instance being named based on the db name, as is done in create command
+    def primary_instance
+      database_url = Secrets.new(app: app, action: 'get', args: [], context: context).get('DATABASE_URL')
+      return nil unless database_url
+
+      primary_uri = URI.parse(database_url)
+      host = primary_uri.host
+
+      # Convert handshake-onyx-burmese-pgbouncer-service to handshake-onyx-burmese
+      host.gsub('pgbouncer-service', '')
     end
 
     private
@@ -59,6 +76,19 @@ module Seira
 
     def run_list
       puts existing_instances
+    end
+
+    def run_restart
+      name = "#{app}-#{args[0]}"
+      if system("gcloud sql instances restart #{name}")
+        puts "Successfully restarted sql instance #{name}"
+      else
+        puts "Failed to restart sql instance #{name}"
+      end
+    end
+
+    def run_ps
+      Seira::Db::Ps.new(app: app, action: action, args: args, context: context).run
     end
 
     def existing_instances
