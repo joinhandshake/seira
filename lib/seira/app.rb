@@ -52,6 +52,9 @@ module Seira
     private
 
     def run_bootstrap
+      # TODO: Verify that 00-namespace exists
+      # TODO: Do conformance test on the yaml files before running anything, including that 00-namespace.yaml exists and has right name
+      system("kubectl apply -f kubernetes/#{context[:cluster]}/#{app}/00-namespace.yaml") # Create namespace before anything else
       bootstrap_main_secret
       bootstrap_cloudsql_secret
       bootstrap_gcr_secret
