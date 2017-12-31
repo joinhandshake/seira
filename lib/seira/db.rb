@@ -1,7 +1,6 @@
 require 'securerandom'
 
 require_relative 'db/create'
-require_relative 'db/ps'
 
 module Seira
   class Db
@@ -45,7 +44,7 @@ module Seira
       host = primary_uri.host
 
       # Convert handshake-onyx-burmese-pgbouncer-service to handshake-onyx-burmese
-      host.gsub('pgbouncer-service', '')
+      host.gsub('-pgbouncer-service', '')
     end
 
     private
