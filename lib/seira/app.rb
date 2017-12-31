@@ -71,7 +71,7 @@ module Seira
         revision = current_revision
       end
 
-      replacement_hash = { 
+      replacement_hash = {
         'REVISION' => revision,
         'RESTARTED_AT_VALUE' => "Initial Deploy for #{revision}"
       }
