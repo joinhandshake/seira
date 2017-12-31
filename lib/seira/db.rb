@@ -4,7 +4,7 @@ require_relative 'db/create'
 
 module Seira
   class Db
-    VALID_ACTIONS = %w[help create delete list restart].freeze
+    VALID_ACTIONS = %w[help create delete list restart connect].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -28,6 +28,8 @@ module Seira
         run_list
       when 'restart'
         run_restart
+      when 'connect'
+        run_connect
       else
         fail "Unknown command encountered"
       end
@@ -82,6 +84,14 @@ module Seira
       else
         puts "Failed to restart sql instance #{name}"
       end
+    end
+
+    def run_connect
+      name = args[0] || primary_instance
+      puts "Connecting to #{name}..."
+      root_password = Secrets.new(app: app, action: 'get', args: [], context: context).get("#{name.tr('-', '_').upcase}_ROOT_PASSWORD") || "Not found in secrets"
+      puts "Your root password for 'postgres' user is: #{root_password}"
+      system("gcloud sql connect #{name}")
     end
 
     def existing_instances

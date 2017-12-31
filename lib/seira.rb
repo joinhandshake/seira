@@ -1,5 +1,6 @@
 require 'json'
 require 'highline/import'
+require 'colorize'
 
 require "seira/version"
 require 'seira/app'
