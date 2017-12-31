@@ -4,7 +4,7 @@ require_relative 'db/create'
 
 module Seira
   class Db
-    VALID_ACTIONS = %w[help create delete list restart ps].freeze
+    VALID_ACTIONS = %w[help create delete list restart].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -28,8 +28,6 @@ module Seira
         run_list
       when 'restart'
         run_restart
-      when 'ps'
-        run_ps
       else
         fail "Unknown command encountered"
       end
@@ -84,10 +82,6 @@ module Seira
       else
         puts "Failed to restart sql instance #{name}"
       end
-    end
-
-    def run_ps
-      Seira::Db::Ps.new(app: app, action: action, args: args, context: context).run
     end
 
     def existing_instances
