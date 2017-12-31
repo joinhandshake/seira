@@ -71,7 +71,10 @@ module Seira
         revision = current_revision
       end
 
-      replacement_hash = { 'REVISION' => revision }
+      replacement_hash = { 
+        'REVISION' => revision,
+        'RESTARTED_AT_VALUE' => "Initial Deploy for #{revision}"
+      }
 
       if restart
         replacement_hash['RESTARTED_AT_VALUE'] = Time.now.to_s
