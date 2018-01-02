@@ -55,6 +55,8 @@ module Seira
       puts "create: Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags."
       puts "delete: Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first."
       puts "list: List all postgres instances."
+      puts "restart: Fully restart the database."
+      puts "connect: Open a psql command prompt. You will be shown the password needed before the prompt opens."
     end
 
     def run_create
