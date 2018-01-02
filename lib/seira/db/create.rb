@@ -58,7 +58,7 @@ module Seira
           elsif arg.start_with? '--storage='
             @storage = arg.split('=')[1]
           elsif arg.start_with? '--primary='
-            @replica_for = arg.split('=')[1] # TODO: Read secret to get it automatically
+            @replica_for = arg.split('=')[1] # TODO: Read secret to get it automatically, but allow for fallback
           elsif arg.start_with? '--highly-available'
             @make_highly_available = true
           elsif /^--[\w\-]+=.+$/.match? arg

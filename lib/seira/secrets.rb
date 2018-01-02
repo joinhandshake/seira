@@ -103,7 +103,7 @@ module Seira
       if value.nil?
         puts "Secret '#{key}' not found"
       else
-        puts "#{key}: #{value}"
+        puts "#{key.green}: #{value}"
       end
     end
 
@@ -123,7 +123,7 @@ module Seira
       secrets = fetch_current_secrets
       puts "Base64 encoded keys for #{app}:"
       secrets['data'].each do |k, v|
-        puts "#{k}: #{v}"
+        puts "#{k.green}: #{v}"
       end
     end
 
@@ -131,7 +131,7 @@ module Seira
       secrets = fetch_current_secrets
       puts "Decoded (raw) keys for #{app}:"
       secrets['data'].each do |k, v|
-        puts "#{k}: #{Base64.decode64(v)}"
+        puts "#{k.green}: #{Base64.decode64(v)}"
       end
     end
 
