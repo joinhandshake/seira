@@ -75,6 +75,8 @@ module Seira
       # Set defaults
       tier = 'web'
       clear_commands = false
+      detached = false
+      container_name = app
 
       # Loop through args and process any that aren't just the command to run
       loop do
@@ -86,8 +88,12 @@ module Seira
         break unless arg.start_with? '--'
         if arg.start_with? '--tier='
           tier = arg.split('=')[1]
-        elsif arg.start_with? '--clear-commands='
-          clear_commands = %w[true yes t y].include? arg.split('=')[1]
+        elsif arg == '--clear-commands'
+          clear_commands = true
+        elsif arg == '--detached'
+          detached = true
+        elsif arg.start_with? '--container='
+          container_name = arg.split('=')[1]
         else
           puts "Warning: Unrecognized argument #{arg}"
         end
@@ -122,28 +128,39 @@ module Seira
         end
       end
 
+      if detached
+        target_container = spec['containers'].find { |container| container['name'] == container_name }
+        if target_container.nil?
+          puts "Could not find container '#{container_name}' to run command in"
+          exit(1)
+        end
+        target_container['command'] = ['bash', '-c', command]
+      end
+
       puts "Creating temporary pod #{temp_name}"
       unless system("kubectl --namespace=#{app} create -f - <<JSON\n#{temp_pod.to_json}\nJSON")
         puts 'Failed to create pod'
         exit(1)
       end
 
-      # Check pod status until it's ready to connect to
-      print 'Waiting for pod to start...'
-      loop do
-        pod = JSON.parse(`kubectl --namespace=#{app} get pods/#{temp_name} -o json`)
-        break if pod['status']['phase'] == 'Running'
-        print '.'
-        sleep 1
-      end
-      print "\n"
+      unless detached
+        # Check pod status until it's ready to connect to
+        print 'Waiting for pod to start...'
+        loop do
+          pod = JSON.parse(`kubectl --namespace=#{app} get pods/#{temp_name} -o json`)
+          break if pod['status']['phase'] == 'Running'
+          print '.'
+          sleep 1
+        end
+        print "\n"
 
-      # Connect to the pod, running the specified command
-      connect_to_pod(temp_name, command)
+        # Connect to the pod, running the specified command
+        connect_to_pod(temp_name, command)
 
-      # Clean up
-      unless system("kubectl --namespace=#{app} delete pod #{temp_name}")
-        puts "Warning: failed to clean up pod #{temp_name}"
+        # Clean up
+        unless system("kubectl --namespace=#{app} delete pod #{temp_name}")
+          puts "Warning: failed to clean up pod #{temp_name}"
+        end
       end
     end
 

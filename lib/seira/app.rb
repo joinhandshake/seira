@@ -52,6 +52,9 @@ module Seira
     private
 
     def run_bootstrap
+      # TODO: Verify that 00-namespace exists
+      # TODO: Do conformance test on the yaml files before running anything, including that 00-namespace.yaml exists and has right name
+      system("kubectl apply -f kubernetes/#{context[:cluster]}/#{app}/00-namespace.yaml") # Create namespace before anything else
       bootstrap_main_secret
       bootstrap_cloudsql_secret
       bootstrap_gcr_secret
@@ -71,7 +74,10 @@ module Seira
         revision = current_revision
       end
 
-      replacement_hash = { 'REVISION' => revision }
+      replacement_hash = {
+        'REVISION' => revision,
+        'RESTARTED_AT_VALUE' => "Initial Deploy for #{revision}"
+      }
 
       if restart
         replacement_hash['RESTARTED_AT_VALUE'] = Time.now.to_s
