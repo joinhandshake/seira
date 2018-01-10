@@ -10,12 +10,12 @@ describe Seira::Secrets do
     allow(Seira::Cluster).to receive(:current_cluster).and_return('clustername')
     expect(subject).to receive(:`).with('kubectl get secret appname-secrets --namespace appname -o json').and_return(old_secrets.to_json)
     expect(subject).to receive(:system).with('kubectl get secret appname-secrets --namespace appname > /dev/null').and_return(true)
+    expect(Dir).to receive(:mktmpdir).and_call_original # Make sure we are operating in a temp directory
     expect(File).to receive(:open) do |filename, &block|
       file = double('file')
       expect(file).to receive(:write).with(new_secrets.to_json)
       block.call(file)
       expect(subject).to receive(:system).with("kubectl replace --namespace appname -f #{filename}").and_return(true)
-      expect(File).to receive(:delete).with(filename)
     end
 
     subject.run
