@@ -64,39 +64,41 @@ module Seira
 
     # Kube vanilla based upgrade
     def run_apply(restart: false)
-      destination = "tmp/#{context[:cluster]}/#{app}"
-      revision = ENV['REVISION']
+      Dir.mktmpdir do |dir|
+        destination = "#{dir}/#{context[:cluster]}/#{app}"
+        revision = ENV['REVISION']
 
-      if revision.nil?
-        current_image = `kubectl get deployment --namespace=#{app} -l app=#{app},tier=web -o=jsonpath='{$.items[:1].spec.template.spec.containers[:1].image}'`.strip.chomp
-        current_revision = current_image.split(':').last
-        exit(1) unless HighLine.agree("No REVISION specified. Use current deployment revision '#{current_revision}'?")
-        revision = current_revision
+        if revision.nil?
+          current_image = `kubectl get deployment --namespace=#{app} -l app=#{app},tier=web -o=jsonpath='{$.items[:1].spec.template.spec.containers[:1].image}'`.strip.chomp
+          current_revision = current_image.split(':').last
+          exit(1) unless HighLine.agree("No REVISION specified. Use current deployment revision '#{current_revision}'?")
+          revision = current_revision
+        end
+
+        replacement_hash = {
+          'REVISION' => revision,
+          'RESTARTED_AT_VALUE' => "Initial Deploy for #{revision}"
+        }
+
+        if restart
+          replacement_hash['RESTARTED_AT_VALUE'] = Time.now.to_s
+        end
+
+        replacement_hash.each do |k, v|
+          next unless v.nil? || v == ''
+          puts "Found nil or blank value for replacement hash key #{k}. Aborting!"
+          exit(1)
+        end
+
+        find_and_replace_revision(
+          source: "kubernetes/#{context[:cluster]}/#{app}",
+          destination: destination,
+          replacement_hash: replacement_hash
+        )
+
+        puts "Running 'kubectl apply -f #{destination}'"
+        system("kubectl apply -f #{destination}")
       end
-
-      replacement_hash = {
-        'REVISION' => revision,
-        'RESTARTED_AT_VALUE' => "Initial Deploy for #{revision}"
-      }
-
-      if restart
-        replacement_hash['RESTARTED_AT_VALUE'] = Time.now.to_s
-      end
-
-      replacement_hash.each do |k, v|
-        next unless v.nil? || v == ''
-        puts "Found nil or blank value for replacement hash key #{k}. Aborting!"
-        exit(1)
-      end
-
-      find_and_replace_revision(
-        source: "kubernetes/#{context[:cluster]}/#{app}",
-        destination: destination,
-        replacement_hash: replacement_hash
-      )
-
-      puts "Running 'kubectl apply -f #{destination}'"
-      system("kubectl apply -f #{destination}")
     end
 
     def run_scale

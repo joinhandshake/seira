@@ -138,22 +138,22 @@ module Seira
     # In the normal case the secret we are updating is just main_secret_name,
     # but in special cases we may be doing an operation on a different secret
     def write_secrets(secrets:, secret_name: main_secret_name)
-      file_name = "tmp/temp-secrets-#{Seira::Cluster.current_cluster}-#{secret_name}.json"
-      File.open(file_name, "wb") do |f|
-        f.write(secrets.to_json)
+      Dir.mktmpdir do |dir|
+        file_name = "#{dir}/temp-secrets-#{Seira::Cluster.current_cluster}-#{secret_name}.json"
+        File.open(file_name, "w") do |f|
+          f.write(secrets.to_json)
+        end
+
+        # The command we use depends on if it already exists or not
+        secret_exists = system("kubectl get secret #{secret_name} --namespace #{app} > /dev/null")
+        command = secret_exists ? "replace" : "create"
+
+        if system("kubectl #{command} --namespace #{app} -f #{file_name}")
+          puts "Successfully created/replaced #{secret_name} secret #{key} in cluster #{Seira::Cluster.current_cluster}"
+        else
+          puts "Failed to update secret"
+        end
       end
-
-      # The command we use depends on if it already exists or not
-      secret_exists = system("kubectl get secret #{secret_name} --namespace #{app} > /dev/null")
-      command = secret_exists ? "replace" : "create"
-
-      if system("kubectl #{command} --namespace #{app} -f #{file_name}")
-        puts "Successfully created/replaced #{secret_name} secret #{key} in cluster #{Seira::Cluster.current_cluster}"
-      else
-        puts "Failed to update secret"
-      end
-
-      File.delete(file_name)
     end
 
     # Returns the still-base64encoded secrets hashmap
