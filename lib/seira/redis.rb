@@ -122,12 +122,12 @@ module Seira
         end
       end
 
-      file_name = write_config(values)
-      unique_name = Seira::Random.unique_name(existing_instances)
-      name = "#{app}-redis-#{unique_name}"
-      puts `helm install --namespace #{app} --name #{name} --wait -f #{file_name} stable/redis`
-
-      File.delete(file_name)
+      Dir.mktmpdir do |dir|
+        file_name = write_config(dir: dir, values: values)
+        unique_name = Seira::Random.unique_name(existing_instances)
+        name = "#{app}-redis-#{unique_name}"
+        puts `helm install --namespace #{app} --name #{name} --wait -f #{file_name} stable/redis`
+      end
 
       puts "To get status: 'seira #{context[:cluster]} #{app} redis status #{unique_name}'"
       puts "To get credentials for storing in app secrets: 'seira #{context[:cluster]} #{app} redis credentials #{unique_name}'"
@@ -151,8 +151,8 @@ module Seira
       end
     end
 
-    def write_config(values)
-      file_name = "tmp/temp-redis-config-#{Seira::Cluster.current_cluster}-#{app}.json"
+    def write_config(dir:, values:)
+      file_name = "#{dir}/temp-redis-config-#{Seira::Cluster.current_cluster}-#{app}.json"
       File.open(file_name, "wb") do |f|
         f.write(values.to_json)
       end

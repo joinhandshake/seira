@@ -103,12 +103,12 @@ module Seira
         end
       end
 
-      file_name = write_config(values)
-      unique_name = Seira::Random.unique_name(existing_instances)
-      name = "#{app}-memcached-#{unique_name}"
-      puts `helm install --namespace #{app} --name #{name} --wait -f #{file_name} stable/memcached`
-
-      File.delete(file_name)
+      Dir.mktmpdir do |dir|
+        file_name = write_config(dir: dir, values: values)
+        unique_name = Seira::Random.unique_name(existing_instances)
+        name = "#{app}-memcached-#{unique_name}"
+        puts `helm install --namespace #{app} --name #{name} --wait -f #{file_name} stable/memcached`
+      end
 
       puts "To get status: 'seira #{context[:cluster]} #{app} memcached status #{unique_name}'"
       puts "Service URI for this memcached instance: 'memcached://#{name}-memcached:11211'."
@@ -131,8 +131,8 @@ module Seira
       end
     end
 
-    def write_config(values)
-      file_name = "tmp/temp-memcached-config-#{Seira::Cluster.current_cluster}-#{app}.json"
+    def write_config(dir:, values:)
+      file_name = "#{dir}/temp-memcached-config-#{Seira::Cluster.current_cluster}-#{app}.json"
       File.open(file_name, "wb") do |f|
         f.write(values.to_json)
       end
