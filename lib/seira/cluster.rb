@@ -103,7 +103,7 @@ module Seira
       cluster_config = JSON.parse(`gcloud container clusters describe #{cluster} --format json`)
 
       # Update the master node first
-      puts 'updating master'
+      puts 'updating master (this may take a while)'
       if cluster_config['currentMasterVersion'] == new_version
         # Master has already been updated; this step is not needed
         puts 'already up to date'
@@ -183,6 +183,7 @@ module Seira
         #   because they're tied to a specific node
         # --delete-local-data prevents failing due to presence of local data, which cannot be moved
         #   but is bad practice to use for anything that can't be lost
+        puts "draining #{node}"
         unless system("kubectl drain --force --ignore-daemonsets --delete-local-data #{node}")
           puts "failed to drain node #{node}"
           exit(1)
@@ -191,12 +192,14 @@ module Seira
 
       # All workloads which can be moved have been moved off of old node pool have been moved, so
       # that node pool can be deleted, leaving only the new pool with the new version
-      puts 'deleting old node pool'
-      if system("gcloud container node-pools delete #{old_pool['name']} --cluster #{cluster}")
-        puts 'old pool deleted successfully'
-      else
-        puts 'failed to delete old pool'
-        exit(1)
+      if HighLine.agree('Delete old node pool?')
+        puts 'deleting old node pool'
+        if system("gcloud container node-pools delete #{old_pool['name']} --cluster #{cluster}")
+          puts 'old pool deleted successfully'
+        else
+          puts 'failed to delete old pool'
+          exit(1)
+        end
       end
 
       puts 'upgrade complete!'
