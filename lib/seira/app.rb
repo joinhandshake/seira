@@ -165,6 +165,9 @@ module Seira
       Dir.foreach(destination) do |item|
         next if item == '.' || item == '..'
 
+        # Run manifests are not somethign that are deployed, but rather used to run one-off commands.
+        next if item == 'run.yaml' || item == 'run.yml'
+
         text = File.read("#{destination}/#{item}")
 
         new_contents = text

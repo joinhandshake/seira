@@ -8,6 +8,7 @@ require 'seira/app'
 require 'seira/cluster'
 require 'seira/memcached'
 require 'seira/pods'
+require 'seira/jobs'
 require 'seira/proxy'
 require 'seira/random'
 require 'seira/db'
@@ -23,6 +24,7 @@ module Seira
     CATEGORIES = {
       'secrets' => Seira::Secrets,
       'pods' => Seira::Pods,
+      'jobs' => Seira::Jobs,
       'db' => Seira::Db,
       'redis' => Seira::Redis,
       'memcached' => Seira::Memcached,
