@@ -49,6 +49,13 @@ module Seira
       run_apply(restart: true)
     end
 
+    # TODO: Try a different tier if web DNE in that particular app.
+    def ask_cluster_for_current_revision
+      current_image = `kubectl get deployment --namespace=#{app} -l app=#{app},tier=web -o=jsonpath='{$.items[:1].spec.template.spec.containers[:1].image}'`.strip.chomp
+      current_revision = current_image.split(':').last
+      current_revision
+    end
+
     private
 
     def run_bootstrap
@@ -69,8 +76,7 @@ module Seira
         revision = ENV['REVISION']
 
         if revision.nil?
-          current_image = `kubectl get deployment --namespace=#{app} -l app=#{app},tier=web -o=jsonpath='{$.items[:1].spec.template.spec.containers[:1].image}'`.strip.chomp
-          current_revision = current_image.split(':').last
+          current_revision = ask_cluster_for_current_revision
           exit(1) unless HighLine.agree("No REVISION specified. Use current deployment revision '#{current_revision}'?")
           revision = current_revision
         end
@@ -165,8 +171,9 @@ module Seira
       Dir.foreach(destination) do |item|
         next if item == '.' || item == '..'
 
-        # Run manifests are not somethign that are deployed, but rather used to run one-off commands.
-        next if item == 'run.yaml' || item == 'run.yml'
+        # Skip any manifest file that has "skip.yaml" at the end. Common use case is for Job definitions
+        # to be used in "seira staging <app> jobs run"
+        next if item.end_with?("skip.yaml")
 
         text = File.read("#{destination}/#{item}")
 

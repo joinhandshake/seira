@@ -53,11 +53,11 @@ module Seira
     end
 
     def run_run
+      gcp_app = App.new(app: app, action: 'apply', args: [""], context: context)
+      
       # Set defaults
-      tier = 'web'
-      clear_commands = false
-      detached = false
-      container_name = app
+      detached = false # Wait for job to finish before continuing.
+      no_delete = false # Delete at end
 
       # Loop through args and process any that aren't just the command to run
       loop do
@@ -66,81 +66,77 @@ module Seira
           puts 'Please specify a command to run'
           exit(1)
         end
+
         break unless arg.start_with? '--'
-        if arg.start_with? '--tier='
-          tier = arg.split('=')[1]
-        elsif arg == '--clear-commands'
-          clear_commands = true
-        elsif arg == '--detached'
+
+        if arg == '--detached'
           detached = true
-        elsif arg.start_with? '--container='
-          container_name = arg.split('=')[1]
+        elsif arg == '--no-delete'
+          no_delete = true
         else
           puts "Warning: Unrecognized argument #{arg}"
         end
+
         args.shift
       end
 
-      # Any remaining args are the command to run
+      if detached && !no_delete
+        puts "Cannot delete Job after running if Job is detached, since we don't know when it finishes."
+        exit(1)
+      end
+
+      # TODO: Configurable CPU and memory by args such as large, small, xlarge.
       command = args.join(' ')
-
-      # Find a 'template' pod from the proper tier
-      template_pod = fetch_pods(app: app, tier: tier).first
-      if template_pod.nil?
-        puts "Unable to find #{tier} tier pod to copy config from"
-        exit(1)
-      end
-
-      # Use that template pod's configuration to create a new temporary pod
-      temp_name = "#{app}-temp-#{Random.unique_name}"
-      spec = template_pod['spec']
-      temp_pod = {
-        apiVersion: template_pod['apiVersion'],
-        kind: 'Job',
-        spec: spec,
-        metadata: {
-          name: temp_name
-        }
+      unique_name = "#{app}-run-#{Random.unique_name}"
+      revision = gcp_app.ask_cluster_for_current_revision # TODO: Make more reliable, especially with no web tier
+      replacement_hash = {
+        'UNIQUE_NAME' => unique_name,
+        'REVISION' => revision,
+        'COMMAND' => command.split(' ').map { |part| "\"#{part}\"" }.join(", "),
+        'CPU_REQUEST' => '200m',
+        'CPU_LIMIT' => '500m',
+        'MEMORY_REQUEST' => '500Mi',
+        'MEMORY_LIMIT' => '1Gi',
       }
-      spec['restartPolicy'] = 'Never'
-      if clear_commands
-        spec['containers'].each do |container|
-          container['command'] = ['bash', '-c', 'tail -f /dev/null']
+
+      source = "kubernetes/#{context[:cluster]}/#{app}" # TODO: Move to method in app.rb
+      Dir.mktmpdir do |destination|
+        revision = ENV['REVISION']
+        file_name = "run.skip.yaml"
+
+        FileUtils.mkdir_p destination # Create the nested directory
+        FileUtils.copy_file "#{source}/#{file_name}", "#{destination}/#{file_name}"
+
+        # TOOD: Move this into a method since it is copied from app.rb
+        text = File.read("#{destination}/#{file_name}")
+        new_contents = text
+        replacement_hash.each do |key, value|
+          new_contents.gsub!(key, value)
         end
+        File.open("#{destination}/#{file_name}", 'w') { |file| file.write(new_contents) }
+
+        puts "Running 'kubectl apply -f #{destination}'"
+        system("kubectl apply -f #{destination}")
       end
 
-      if detached
-        target_container = spec['containers'].find { |container| container['name'] == container_name }
-        if target_container.nil?
-          puts "Could not find container '#{container_name}' to run command in"
-          exit(1)
-        end
-        target_container['command'] = ['bash', '-c', command]
-      end
-
-      puts "Creating temporary pod #{temp_name}"
-      unless system("kubectl --namespace=#{app} create -f - <<JSON\n#{temp_pod.to_json}\nJSON")
-        puts 'Failed to create pod'
-        exit(1)
-      end
+      # TODO: See https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/ for deleting old pods. As long as
+      # we are logging to papertrail or somewhere, we can delete the job when it is done.
 
       unless detached
-        # Check pod status until it's ready to connect to
-        print 'Waiting for pod to start...'
+        # Check job status until it's finished
+        print 'Waiting for job to complete...'
         loop do
-          pod = JSON.parse(`kubectl --namespace=#{app} get pods/#{temp_name} -o json`)
-          break if pod['status']['phase'] == 'Running'
+          job = JSON.parse(`kubectl --namespace=#{app} get job #{unique_name} -o json`)
+          break if job['status']['active'].nil? && !job['status']['succeeded'].nil?
           print '.'
           sleep 1
         end
-        print "\n"
 
-        # Connect to the pod, running the specified command
-        connect_to_pod(temp_name, command)
-
-        # Clean up
-        unless system("kubectl --namespace=#{app} delete pod #{temp_name}")
-          puts "Warning: failed to clean up pod #{temp_name}"
+        if no_delete
+          puts "Job finished. Leaving Job object in cluster, clean up manually when confirmed."
+        else
+          print "Job finished. Deleting Job from cluster for cleanup."
+          system("kubectl delete job #{unique_name} -n #{app}")
         end
       end
     end
