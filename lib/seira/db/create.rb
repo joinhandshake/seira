@@ -61,6 +61,8 @@ module Seira
             @replica_for = arg.split('=')[1] # TODO: Read secret to get it automatically, but allow for fallback
           elsif arg.start_with? '--highly-available'
             @make_highly_available = true
+          elsif arg.start_with? '--database-name='
+            @database_name = arg.split('=')[1]
           elsif /^--[\w\-]+=.+$/.match? arg
             create_command += " #{arg}"
           else
@@ -195,6 +197,10 @@ module Seira
         name.gsub("handshake-", "")
       end
 
+      def default_database_name
+        "#{app}_#{context[:cluster]}"
+      end
+
       def write_pgbouncer_yaml
         # TODO: Clean this up by moving into a proper templated yaml file
         pgbouncer_yaml = <<-FOO
@@ -244,7 +250,7 @@ spec:
         database: #{name}
     spec:
       containers:
-        - image: handshake/pgbouncer:0.1.2
+        - image: handshake/pgbouncer:0.2.0
           name: pgbouncer
           ports:
             - containerPort: 6432
@@ -254,9 +260,14 @@ spec:
                 name: #{pgbouncer_configs_name}
             - secretRef:
                 name: #{pgbouncer_secret_name}
+          env:
+            - name: "PGPORT"
+              value: "6432"
+            - name: "PGDATABASE"
+              value: "#{@database_name || default_database_name}"
           readinessProbe:
-            tcpSocket:
-              port: 6432
+            exec:
+              command: ["psql", "-c", "SELECT 1;"]
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
