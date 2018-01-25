@@ -2,7 +2,7 @@ require 'json'
 
 module Seira
   class Jobs
-    VALID_ACTIONS = %w[help list delete logs run].freeze
+    VALID_ACTIONS = %w[help list delete run].freeze
     SUMMARY = "Manage your application's jobs.".freeze
 
     attr_reader :app, :action, :args, :job_name, :context
@@ -23,8 +23,6 @@ module Seira
         run_list
       when 'delete'
         run_delete
-      when 'logs'
-        run_logs
       when 'run'
         run_run
       else
@@ -46,10 +44,6 @@ module Seira
 
     def run_delete
       puts `kubectl delete job #{job_name} --namespace=#{app}`
-    end
-
-    def run_logs
-      puts `kubectl logs #{job_name} --namespace=#{app} -c #{app}`
     end
 
     def run_run
@@ -139,16 +133,6 @@ module Seira
           system("kubectl delete job #{unique_name} -n #{app}")
         end
       end
-    end
-
-    def fetch_pods(filters)
-      filter_string = filters.map { |k, v| "#{k}=#{v}" }.join(',')
-      JSON.parse(`kubectl get pods --namespace=#{app} -o json --selector=#{filter_string}`)['items']
-    end
-
-    def connect_to_pod(name, command = 'bash')
-      puts "Connecting to #{name}..."
-      system("kubectl exec -ti #{name} --namespace=#{app} -- #{command}")
     end
   end
 end
