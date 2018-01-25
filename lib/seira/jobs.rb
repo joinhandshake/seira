@@ -116,17 +116,28 @@ module Seira
       unless detached
         # Check job status until it's finished
         print 'Waiting for job to complete...'
+        job_spec = nil
         loop do
-          job = JSON.parse(`kubectl --namespace=#{app} get job #{unique_name} -o json`)
-          break if job['status']['active'].nil? && !job['status']['succeeded'].nil?
+          job_spec = JSON.parse(`kubectl --namespace=#{app} get job #{unique_name} -o json`)
+          puts job_spec['status']['succeeded']
+          break if !job_spec['status']['succeeded'].nil? || !job_spec['status']['failed'].nil?
           print '.'
-          sleep 1
+          sleep 3
         end
 
+        status =
+          if !job_spec['status']['succeeded'].nil?
+            "succeeded"
+          elsif !job_spec['status']['failed'].nil?
+            "failed"
+          else
+            "unknown"
+          end
+
         if no_delete
-          puts "Job finished. Leaving Job object in cluster, clean up manually when confirmed."
+          puts "Job finished with status #{status}. Leaving Job object in cluster, clean up manually when confirmed."
         else
-          print "Job finished. Deleting Job from cluster for cleanup."
+          print "Job finished with status #{status}. Deleting Job from cluster for cleanup."
           system("kubectl delete job #{unique_name} -n #{app}")
         end
       end
