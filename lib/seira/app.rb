@@ -175,7 +175,7 @@ module Seira
         next if item == '.' || item == '..'
 
         # If we have run into a directory item, skip it
-        next File.directory?("#{destination}/#{item}")
+        next if File.directory?("#{destination}/#{item}")
 
         # Skip any manifest file that has "seira-skip.yaml" at the end. Common use case is for Job definitions
         # to be used in "seira staging <app> jobs run"
