@@ -48,7 +48,7 @@ module Seira
 
     def run_run
       gcp_app = App.new(app: app, action: 'apply', args: [""], context: context)
-      
+
       # Set defaults
       detached = false # Wait for job to finish before continuing.
       no_delete = false # Delete at end
@@ -112,9 +112,6 @@ module Seira
         puts "Running 'kubectl apply -f #{destination}'"
         system("kubectl apply -f #{destination}")
       end
-
-      # TODO: See https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/ for deleting old pods. As long as
-      # we are logging to papertrail or somewhere, we can delete the job when it is done.
 
       unless detached
         # Check job status until it's finished
