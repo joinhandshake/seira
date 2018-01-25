@@ -49,9 +49,9 @@ module Seira
       run_apply(restart: true)
     end
 
-    # TODO: Try a different tier if web DNE in that particular app.
     def ask_cluster_for_current_revision
-      current_image = `kubectl get deployment --namespace=#{app} -l app=#{app},tier=web -o=jsonpath='{$.items[:1].spec.template.spec.containers[:1].image}'`.strip.chomp
+      tier = context[:settings].config_for_app(app)['golden_tier'] || 'web'
+      current_image = `kubectl get deployment --namespace=#{app} -l app=#{app},tier=#{tier} -o=jsonpath='{$.items[:1].spec.template.spec.containers[:1].image}'`.strip.chomp
       current_revision = current_image.split(':').last
       current_revision
     end

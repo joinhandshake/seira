@@ -25,7 +25,11 @@ module Seira
     end
 
     def valid_apps
-      settings['seira']['valid_apps']
+      settings['seira']['valid_apps'].map { |app| app['name'] }
+    end
+
+    def config_for_app(app_name)
+      settings['seira']['valid_apps'].find { |app| app['name'] == app_name }
     end
 
     def valid_cluster_names

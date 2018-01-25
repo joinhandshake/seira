@@ -107,6 +107,7 @@ module Seira
       {
         cluster: cluster,
         project: project,
+        settings: settings,
         default_zone: settings.default_zone
       }
     end
