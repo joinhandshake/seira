@@ -198,7 +198,7 @@ module Seira
       end
 
       def default_database_name
-        "#{app}_#{context[:cluster]}"
+        "#{app}_#{Helpers.rails_env(context: context)}"
       end
 
       def write_pgbouncer_yaml
