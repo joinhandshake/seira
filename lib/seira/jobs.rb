@@ -96,10 +96,10 @@ module Seira
       source = "kubernetes/#{context[:cluster]}/#{app}" # TODO: Move to method in app.rb
       Dir.mktmpdir do |destination|
         revision = ENV['REVISION']
-        file_name = "run.skip.yaml"
+        file_name = "template.yaml"
 
         FileUtils.mkdir_p destination # Create the nested directory
-        FileUtils.copy_file "#{source}/#{file_name}", "#{destination}/#{file_name}"
+        FileUtils.copy_file "#{source}/jobs/#{file_name}", "#{destination}/#{file_name}"
 
         # TOOD: Move this into a method since it is copied from app.rb
         text = File.read("#{destination}/#{file_name}")

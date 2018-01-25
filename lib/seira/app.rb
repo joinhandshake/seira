@@ -165,15 +165,21 @@ module Seira
       FileUtils.mkdir_p destination # Create the nested directory
       FileUtils.rm_rf("#{destination}/.", secure: true) # Clean out old files from the tmp folder
       FileUtils.copy_entry source, destination
+      # Anything in jobs directory is not intended to be applied when deploying
+      # the app, but rather ran when needed as Job objects. Force to avoid exception if DNE.
+      FileUtils.rm_rf("#{destination}/jobs/") if File.directory?("#{destination}/jobs/")
 
       # Iterate through each yaml file and find/replace and save
       puts "Iterating temp folder files find/replace revision information"
       Dir.foreach(destination) do |item|
         next if item == '.' || item == '..'
 
-        # Skip any manifest file that has "skip.yaml" at the end. Common use case is for Job definitions
+        # If we have run into a directory item, skip it
+        next File.directory?("#{destination}/#{item}")
+
+        # Skip any manifest file that has "seira-skip.yaml" at the end. Common use case is for Job definitions
         # to be used in "seira staging <app> jobs run"
-        next if item.end_with?("skip.yaml")
+        next if item.end_with?("seira-skip.yaml")
 
         text = File.read("#{destination}/#{item}")
 
