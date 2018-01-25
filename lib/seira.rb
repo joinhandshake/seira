@@ -122,7 +122,7 @@ module Seira
     def perform_action_validation(klass:, action:)
       return true if simple_cluster_change?
 
-      unless klass == Seira::Cluster || settings.valid_apps.include?(app)
+      unless klass == Seira::Cluster || settings.applications.include?(app)
         puts "Invalid app name specified"
         exit(1)
       end
