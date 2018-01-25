@@ -50,7 +50,7 @@ module Seira
       gcp_app = App.new(app: app, action: 'apply', args: [""], context: context)
 
       # Set defaults
-      detached = false # Wait for job to finish before continuing.
+      async = false # Wait for job to finish before continuing.
       no_delete = false # Delete at end
 
       # Loop through args and process any that aren't just the command to run
@@ -63,8 +63,8 @@ module Seira
 
         break unless arg.start_with? '--'
 
-        if arg == '--detached'
-          detached = true
+        if arg == '--async'
+          async = true
         elsif arg == '--no-delete'
           no_delete = true
         else
@@ -74,8 +74,8 @@ module Seira
         args.shift
       end
 
-      if detached && !no_delete
-        puts "Cannot delete Job after running if Job is detached, since we don't know when it finishes."
+      if async && !no_delete
+        puts "Cannot delete Job after running if Job is async, since we don't know when it finishes."
         exit(1)
       end
 
@@ -113,7 +113,7 @@ module Seira
         system("kubectl apply -f #{destination}")
       end
 
-      unless detached
+      unless async
         # Check job status until it's finished
         print 'Waiting for job to complete...'
         job_spec = nil
