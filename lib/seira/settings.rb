@@ -24,12 +24,12 @@ module Seira
       settings['seira']['default_zone']
     end
 
-    def valid_apps
-      settings['seira']['valid_apps'].map { |app| app['name'] }
+    def applications
+      settings['seira']['applications'].map { |app| app['name'] }
     end
 
     def config_for_app(app_name)
-      settings['seira']['valid_apps'].find { |app| app['name'] == app_name }
+      settings['seira']['applications'].find { |app| app['name'] == app_name }
     end
 
     def valid_cluster_names
