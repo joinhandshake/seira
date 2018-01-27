@@ -119,7 +119,6 @@ module Seira
         job_spec = nil
         loop do
           job_spec = JSON.parse(`kubectl --namespace=#{app} get job #{unique_name} -o json`)
-          puts job_spec['status']['succeeded']
           break if !job_spec['status']['succeeded'].nil? || !job_spec['status']['failed'].nil?
           print '.'
           sleep 3
