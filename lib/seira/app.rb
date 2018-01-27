@@ -49,6 +49,13 @@ module Seira
       run_apply(restart: true)
     end
 
+    def ask_cluster_for_current_revision
+      tier = context[:settings].config_for_app(app)['golden_tier'] || 'web'
+      current_image = `kubectl get deployment --namespace=#{app} -l app=#{app},tier=#{tier} -o=jsonpath='{$.items[:1].spec.template.spec.containers[:1].image}'`.strip.chomp
+      current_revision = current_image.split(':').last
+      current_revision
+    end
+
     private
 
     def run_bootstrap
@@ -69,8 +76,7 @@ module Seira
         revision = ENV['REVISION']
 
         if revision.nil?
-          current_image = `kubectl get deployment --namespace=#{app} -l app=#{app},tier=web -o=jsonpath='{$.items[:1].spec.template.spec.containers[:1].image}'`.strip.chomp
-          current_revision = current_image.split(':').last
+          current_revision = ask_cluster_for_current_revision
           exit(1) unless HighLine.agree("No REVISION specified. Use current deployment revision '#{current_revision}'?")
           revision = current_revision
         end
@@ -154,11 +160,21 @@ module Seira
       FileUtils.mkdir_p destination # Create the nested directory
       FileUtils.rm_rf("#{destination}/.", secure: true) # Clean out old files from the tmp folder
       FileUtils.copy_entry source, destination
+      # Anything in jobs directory is not intended to be applied when deploying
+      # the app, but rather ran when needed as Job objects. Force to avoid exception if DNE.
+      FileUtils.rm_rf("#{destination}/jobs/") if File.directory?("#{destination}/jobs/")
 
       # Iterate through each yaml file and find/replace and save
       puts "Iterating temp folder files find/replace revision information"
       Dir.foreach(destination) do |item|
         next if item == '.' || item == '..'
+
+        # If we have run into a directory item, skip it
+        next if File.directory?("#{destination}/#{item}")
+
+        # Skip any manifest file that has "seira-skip.yaml" at the end. Common use case is for Job definitions
+        # to be used in "seira staging <app> jobs run"
+        next if item.end_with?("seira-skip.yaml")
 
         text = File.read("#{destination}/#{item}")
 

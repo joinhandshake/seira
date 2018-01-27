@@ -70,9 +70,11 @@ seira:
       cluster: gke_org-production_us-central1-a_production
       aliases:
         - "p"
-  valid_apps:
-    - app1
-    - app2
+  applications:
+    - name: app1
+      golden_tier: "web"
+    - name: app2
+      golden_tier: "web"
 ```
 
 This specification is read in and used to determine what `gcloud` context to use and what `kubectl` cluster to use when operating commands. For example, `seira internal` will connect to `org-internal` gcloud configuration and `gke_org-internal_us-central1-a_internal` kubectl cluster. For shorthand, `seira i` shorthand is specified as an alias.

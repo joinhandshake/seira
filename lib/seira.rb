@@ -8,6 +8,7 @@ require 'seira/app'
 require 'seira/cluster'
 require 'seira/memcached'
 require 'seira/pods'
+require 'seira/jobs'
 require 'seira/proxy'
 require 'seira/random'
 require 'seira/db'
@@ -23,6 +24,7 @@ module Seira
     CATEGORIES = {
       'secrets' => Seira::Secrets,
       'pods' => Seira::Pods,
+      'jobs' => Seira::Jobs,
       'db' => Seira::Db,
       'redis' => Seira::Redis,
       'memcached' => Seira::Memcached,
@@ -105,6 +107,7 @@ module Seira
       {
         cluster: cluster,
         project: project,
+        settings: settings,
         default_zone: settings.default_zone
       }
     end
@@ -119,7 +122,7 @@ module Seira
     def perform_action_validation(klass:, action:)
       return true if simple_cluster_change?
 
-      unless klass == Seira::Cluster || settings.valid_apps.include?(app)
+      unless klass == Seira::Cluster || settings.applications.include?(app)
         puts "Invalid app name specified"
         exit(1)
       end
