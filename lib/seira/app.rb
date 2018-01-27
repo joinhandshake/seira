@@ -136,12 +136,7 @@ module Seira
       main_secret_name = Seira::Secrets.new(app: app, action: action, args: args, context: context).main_secret_name
 
       # 'internal' is a unique cluster/project "cluster". It always means production in terms of rails app.
-      rails_env =
-        if context[:cluster] == 'internal'
-          'production'
-        else
-          context[:cluster]
-        end
+      rails_env = Helpers.rails_env(context: context)
 
       puts `kubectl create secret generic #{main_secret_name} --namespace #{app} --from-literal=RAILS_ENV=#{rails_env} --from-literal=RACK_ENV=#{rails_env}`
     end
