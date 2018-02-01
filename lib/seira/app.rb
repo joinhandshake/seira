@@ -71,6 +71,15 @@ module Seira
 
     # Kube vanilla based upgrade
     def run_apply(restart: false)
+      async = false
+      args.each do |arg|
+        if arg == '--async'
+          async = true
+        else
+          puts "Warning: unrecognized argument #{arg}"
+        end
+      end
+
       Dir.mktmpdir do |dir|
         destination = "#{dir}/#{context[:cluster]}/#{app}"
         revision = ENV['REVISION']
@@ -104,6 +113,12 @@ module Seira
 
         puts "Running 'kubectl apply -f #{destination}'"
         system("kubectl apply -f #{destination}")
+
+        unless async
+          puts "Monitoring rollout status..."
+          # Wait for rollout of all deployments to complete (running `kubectl rollout status` in parallel via xargs)
+          exit 1 unless system("kubectl get deployments -n #{app} -o name | xargs -n1 -P10 kubectl rollout status -n #{app}")
+        end
       end
     end
 
