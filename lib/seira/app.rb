@@ -6,7 +6,7 @@ require 'fileutils'
 # seira staging specs app bootstrap
 module Seira
   class App
-    VALID_ACTIONS = %w[help bootstrap apply restart scale].freeze
+    VALID_ACTIONS = %w[help bootstrap apply restart scale revision].freeze
     SUMMARY = "Bootstrap, scale, configure, restart, your apps.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -30,6 +30,8 @@ module Seira
         run_restart
       when 'scale'
         run_scale
+      when 'revision'
+        run_revision
       else
         fail "Unknown command encountered"
       end
@@ -144,6 +146,10 @@ module Seira
         puts "scaling #{tier} to #{replicas}"
         system("kubectl scale --namespace=#{app} --replicas=#{replicas} deployments/#{config['metadata']['name']}")
       end
+    end
+
+    def run_revision
+      puts ask_cluster_for_current_revision
     end
 
     def bootstrap_main_secret
