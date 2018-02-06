@@ -108,7 +108,7 @@ module Seira
     def run_ps
       verbose = false
       args.each do |arg|
-        if arg == '--verbose' || arg == '-v'
+        if %w[--verbose -v].include? arg
           verbose = true
         else
           puts "Warning: unrecognized argument #{arg}"
@@ -139,9 +139,9 @@ module Seira
       pid = nil
 
       args.each do |arg|
-        if arg == '--force' || arg == '-f'
+        if %w[--force -f].include? arg
           force = true
-        elsif /^\d+$/ =~ arg
+        elsif /^\d+$/.match? arg
           if pid.nil?
             pid = arg
           else
@@ -180,7 +180,7 @@ module Seira
       # TODO(josh): move pgbouncer naming logic here and in Create to a common location
       tier = primary_instance.gsub("#{app}-", '')
       matching_pods = Helpers.fetch_pods(app: app, filters: { tier: tier })
-      if matching_pods.length < 1
+      if matching_pods.empty?
         puts 'Could not find pgbouncer pod to connect to'
         exit 1
       end
