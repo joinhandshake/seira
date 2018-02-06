@@ -62,7 +62,7 @@ module Seira
 
     def run_connect
       # If a pod name is specified, connect to that pod; otherwise pick a random web pod
-      target_pod_name = pod_name || fetch_pods(app: app, tier: 'web').sample&.dig('metadata', 'name')
+      target_pod_name = pod_name || Helpers.fetch_pods(app: app, filters: { tier: 'web' }).sample&.dig('metadata', 'name')
 
       if target_pod_name
         connect_to_pod(target_pod_name)
@@ -104,7 +104,7 @@ module Seira
       command = args.join(' ')
 
       # Find a 'template' pod from the proper tier
-      template_pod = fetch_pods(app: app, tier: tier).first
+      template_pod = Helpers.fetch_pods(app: app, filters: { tier: tier }).first
       if template_pod.nil?
         puts "Unable to find #{tier} tier pod to copy config from"
         exit(1)
@@ -162,11 +162,6 @@ module Seira
           puts "Warning: failed to clean up pod #{temp_name}"
         end
       end
-    end
-
-    def fetch_pods(filters)
-      filter_string = filters.map { |k, v| "#{k}=#{v}" }.join(',')
-      JSON.parse(`kubectl get pods --namespace=#{app} -o json --selector=#{filter_string}`)['items']
     end
 
     def connect_to_pod(name, command = 'bash')

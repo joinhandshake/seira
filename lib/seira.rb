@@ -4,6 +4,7 @@ require 'colorize'
 require 'tmpdir'
 
 require "seira/version"
+require 'helpers'
 require 'seira/app'
 require 'seira/cluster'
 require 'seira/memcached'

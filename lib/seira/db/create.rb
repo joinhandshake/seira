@@ -194,7 +194,7 @@ module Seira
       end
 
       def pgbouncer_tier
-        name.gsub("handshake-", "")
+        name.gsub("#{app}-", "")
       end
 
       def default_database_name
