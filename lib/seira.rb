@@ -75,10 +75,8 @@ module Seira
           @settings.full_cluster_name_for_shorthand(cluster)
         end
       
-      if !(category == 'setup' && cluster == 'all')
+      unless category == 'setup' && cluster == 'all'
         @project = @settings.project_for_cluster(@cluster)
-      else
-        @project = 'all'
       end
     end
 
