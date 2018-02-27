@@ -203,6 +203,8 @@ module Seira
 
       def write_pgbouncer_yaml
         # TODO: Clean this up by moving into a proper templated yaml file
+        # TODO: Fix warning from cloudsql-proxy. We use context[:default_zone] for the DB Instance name
+        # which causes this error: got region "us-central1-c", want "us-central1".
         pgbouncer_yaml = <<-FOO
 ---
 apiVersion: v1
@@ -289,9 +291,6 @@ spec:
           ports:
             - containerPort: 5432
               protocol: TCP
-          envFrom:
-            - configMapRef:
-                name: cloudsql-configs
           volumeMounts:
             - name: cloudsql-credentials
               mountPath: /secrets/cloudsql
