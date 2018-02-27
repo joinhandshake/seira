@@ -18,7 +18,7 @@ module Seira
       ensure_software_installed
 
       if arg == 'all'
-        puts "We will now set up gcloud and kubectl for each project. We use a distinct GCP Project for each environment: #{ENVIRONMENTS.join(', ')}"
+        puts "We will now set up gcloud and kubectl for each project. We use a distinct GCP Project for each environment, which are specified in .seira.yml."
         settings.valid_cluster_names.each do |cluster|
           setup_cluster(cluster)
         end
@@ -26,7 +26,7 @@ module Seira
         puts "We will now set up gcloud and kubectl for #{arg}"
         setup_cluster(arg)
       else
-        puts "Please specify a valid cluster name or 'all'."
+        puts "Please specify a valid cluster name or 'all'. Got #{arg}"
         exit(1)
       end
 
@@ -51,20 +51,8 @@ module Seira
       end
 
       system("gcloud config configurations activate #{cluster_name}")
-
-      # TODO: Is this possible to automate?
-      # system("gcloud iam service-accounts create #{iam_user} --display-name=#{iam_user}")
-      # puts "Created service account:"
-      # system("gcloud iam service-accounts describe #{iam_user}@#{cluster_metadata['project']}.iam.gserviceaccount.com")
-      puts "First,"
-      puts "First, set up a service account in the #{cluster_metadata['project']} project and download the credentials for it. You may do so by accessing the below link. Save the file in a safe location."
-      puts "https://console.cloud.google.com/iam-admin/serviceaccounts/project?project=#{cluster_metadata['project']}&organizationId=#{settings.organization_id}"
-      puts "Then, set up an IAM user that it will inherit the permissions for."
-
-      puts "Please enter the path of your JSON key:"
-      filename = STDIN.gets
-      puts "Activating service account..."
-      system("gcloud auth activate-service-account --key-file #{filename}")
+      puts "Authenticating in order to set the auth for project #{cluster_name}. You will be directed to a google login page."
+      system("gcloud auth login")
       system("gcloud config set project #{cluster_metadata['project']}")
       system("gcloud config set compute/zone #{settings.default_zone}")
       puts "Your new gcloud setup for #{cluster_name}:"

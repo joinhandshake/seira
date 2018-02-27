@@ -68,8 +68,18 @@ module Seira
         @args = reversed_args.reverse
       end
 
-      @cluster = @settings.full_cluster_name_for_shorthand(cluster)
-      @project = @settings.project_for_cluster(@cluster)
+      @cluster = 
+        if category == 'setup' && cluster == 'all'
+          cluster
+        else
+          @settings.full_cluster_name_for_shorthand(cluster)
+        end
+      
+      if !(category == 'setup' && cluster == 'all')
+        @project = @settings.project_for_cluster(@cluster)
+      else
+        @project = 'all'
+      end
     end
 
     def run
