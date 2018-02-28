@@ -220,7 +220,7 @@ module Seira
     def load_configs
       directory = "kubernetes/#{context[:cluster]}/#{app}/"
       Dir.new(directory).flat_map do |filename|
-        next if ['.', '..'].include? filename
+        next if File.directory?(File.join(directory, filename))
         YAML.load_stream(File.read(File.join(directory, filename)))
       end.compact
     end
