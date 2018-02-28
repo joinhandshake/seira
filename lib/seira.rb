@@ -60,6 +60,7 @@ module Seira
       elsif ARGV[0] == 'setup'
         @category = reversed_args.pop
         cluster = reversed_args.pop
+        @args = reversed_args.reverse
       else
         cluster = reversed_args.pop
         @app = reversed_args.pop
@@ -69,13 +70,13 @@ module Seira
       end
 
       @cluster =
-        if category == 'setup' && cluster == 'all'
+        if category == 'setup'
           cluster
         else
           @settings.full_cluster_name_for_shorthand(cluster)
         end
 
-      unless category == 'setup' && cluster == 'all'
+      unless category == 'setup'
         @project = @settings.project_for_cluster(@cluster)
       end
     end
@@ -85,7 +86,7 @@ module Seira
         run_base_help
         exit(0)
       elsif category == 'setup'
-        Seira::Setup.new(arg: cluster, settings: settings).run
+        Seira::Setup.new(target: cluster, args: args, settings: settings).run
         exit(0)
       end
 

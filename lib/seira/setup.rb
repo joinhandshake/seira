@@ -5,10 +5,11 @@ module Seira
   class Setup
     SUMMARY = "Set up your local CLI with the right project and cluster configuration.".freeze
 
-    attr_reader :arg, :settings
+    attr_reader :target, :args, :settings
 
-    def initialize(arg:, settings:)
-      @arg = arg
+    def initialize(target:, args:, settings:)
+      @target = target
+      @args = args
       @settings = settings
     end
 
@@ -17,16 +18,19 @@ module Seira
     def run
       ensure_software_installed
 
-      if arg == 'all'
+      if target == 'status'
+        run_status
+        exit(0)
+      elsif target == 'all'
         puts "We will now set up gcloud and kubectl for each project. We use a distinct GCP Project for each environment, which are specified in .seira.yml."
         settings.valid_cluster_names.each do |cluster|
           setup_cluster(cluster)
         end
-      elsif settings.valid_cluster_names.include?(arg)
-        puts "We will now set up gcloud and kubectl for #{arg}"
-        setup_cluster(arg)
+      elsif settings.valid_cluster_names.include?(target)
+        puts "We will now set up gcloud and kubectl for #{target}"
+        setup_cluster(target)
       else
-        puts "Please specify a valid cluster name or 'all'. Got #{arg}"
+        puts "Please specify a valid cluster name or 'all'. Got #{target}"
         exit(1)
       end
 
@@ -40,6 +44,10 @@ module Seira
 
     private
 
+    def use_service_account_auth?
+      args.include?('--service-account')
+    end
+
     def setup_cluster(cluster_name)
       cluster_metadata = settings.clusters[cluster_name]
 
@@ -51,8 +59,23 @@ module Seira
       end
 
       system("gcloud config configurations activate #{cluster_name}")
-      puts "Authenticating in order to set the auth for project #{cluster_name}. You will be directed to a google login page."
-      system("gcloud auth login")
+
+      # For automation and scripting, us a service account. For personal CLI use google auth based
+      # workflow which is much easier.
+      if use_service_account_auth?
+        puts "First, set up a service account in the #{cluster_metadata['project']} project and download the credentials for it. You may do so by accessing the below link. Save the file in a safe location."
+        puts "https://console.cloud.google.com/iam-admin/serviceaccounts/project?project=#{cluster_metadata['project']}&organizationId=#{settings.organization_id}"
+        puts "Then, set up an IAM user that it will inherit the permissions for."
+
+        puts "Please enter the path of your JSON key:"
+        filename = STDIN.gets
+        puts "Activating service account..."
+        system("gcloud auth activate-service-account --key-file #{filename}")
+      else
+        puts "Authenticating in order to set the auth for project #{cluster_name}. You will be directed to a google login page."
+        system("gcloud auth login")
+      end
+
       system("gcloud config set project #{cluster_metadata['project']}")
       system("gcloud config set compute/zone #{settings.default_zone}")
       puts "Your new gcloud setup for #{cluster_name}:"
@@ -84,6 +107,17 @@ module Seira
         puts "Installing helm..."
         system('brew install kubernetes-helm')
       end
+    end
+
+    def run_status
+      puts "Your gcloud CLI auths (which can be used for many projects):"
+      system("gcloud auth list")
+      puts "Your gcloud CLI configurations (which allow for switching between GCP projects):"
+      system("gcloud config configurations list")
+      puts "Your kubectl contexts (which allow for switching between clusters):"
+      system("kubectl config view -o jsonpath='{.contexts[*].name}'")
+
+      puts "Seira is configured using .seira.yml in the root folder."
     end
   end
 end
