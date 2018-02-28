@@ -59,7 +59,7 @@ module Seira
       system("gcloud config configurations describe #{cluster_name}")
 
       puts "Configuring kubectl for interactions with this project's kubernetes cluster"
-      system("gcloud container clusters get-credentials #{cluster_name} --zone #{settings.default_zone} --project #{cluster_metadata['project']}")
+      system("gcloud container clusters get-credentials #{cluster_name} --project #{cluster_metadata['project']}")
       puts "Your kubectl is set up with:"
       system("kubectl config current-context")
     end
