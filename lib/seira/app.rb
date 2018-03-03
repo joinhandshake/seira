@@ -42,7 +42,7 @@ module Seira
       puts "\n\n"
       puts "Possible actions:\n\n"
       puts "bootstrap: Create new app with main secret, cloudsql secret, and gcr secret in the new namespace."
-      puts "apply: Apply the configuration in kubernetes/<cluster-name>/<app-name> using REVISION environment variable to find/replace REVISION in the YAML."
+      puts "apply: Apply the configuration in kubernetes/<cluster-name>/<app-name> using first argument or REVISION environment variable to find/replace REVISION in the YAML."
       puts "restart: Forces a rolling deploy for any deployment making use of RESTARTED_AT_VALUE in the deployment."
       puts "scale: Scales the given tier deployment to the specified number of instances."
     end
@@ -84,7 +84,7 @@ module Seira
 
       Dir.mktmpdir do |dir|
         destination = "#{dir}/#{context[:cluster]}/#{app}"
-        revision = ENV['REVISION']
+        revision = args.first || ENV['REVISION']
 
         if revision.nil?
           current_revision = ask_cluster_for_current_revision
