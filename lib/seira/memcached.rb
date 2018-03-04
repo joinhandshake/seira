@@ -64,12 +64,16 @@ module Seira
         }
       }
 
+      replica_count = 3 # The default
+
       args.each do |arg|
         puts "Applying arg #{arg} to values"
         if arg.start_with?('--memory=')
           values[:resources][:requests][:memory] = arg.split('=')[1]
         elsif arg.start_with?('--cpu=')
           values[:resources][:requests][:cpu] = arg.split('=')[1]
+        elsif arg.start_with?('--replicas=')
+          replica_count = arg.split('=')[1]
         elsif arg.start_with?('--size=')
           size = arg.split('=')[1]
           case size
@@ -103,10 +107,16 @@ module Seira
         end
       end
 
+      # Make sure that pdbMinAvailable is always 1 less than total replica count
+      # so that we can properly cordon and drain a node.
+      values[:replicaCount] = replica_count
+      values[:pdbMinAvailable] = replica_count - 1
+
+      unique_name = Seira::Random.unique_name(existing_instances)
+      name = "#{app}-memcached-#{unique_name}"
+
       Dir.mktmpdir do |dir|
         file_name = write_config(dir: dir, values: values)
-        unique_name = Seira::Random.unique_name(existing_instances)
-        name = "#{app}-memcached-#{unique_name}"
         puts `helm install --namespace #{app} --name #{name} --wait -f #{file_name} stable/memcached`
       end
 

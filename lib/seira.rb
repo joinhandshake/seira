@@ -17,6 +17,7 @@ require 'seira/redis'
 require 'seira/secrets'
 require 'seira/settings'
 require 'seira/setup'
+require 'seira/node_pools'
 
 # A base runner class that does base checks and then delegates the actual
 # work for the command to a class in lib/seira folder.
@@ -32,7 +33,8 @@ module Seira
       'app' => Seira::App,
       'cluster' => Seira::Cluster,
       'proxy' => Seira::Proxy,
-      'setup' => Seira::Setup
+      'setup' => Seira::Setup,
+      'node-pools' => Seira::NodePools
     }.freeze
 
     attr_reader :project, :cluster, :app, :category, :action, :args
@@ -45,11 +47,16 @@ module Seira
 
       reversed_args = ARGV.reverse.map(&:chomp)
 
-      # The cluster and proxy command are not specific to any app, so that
+      # The cluster, node-pools and proxy command are not specific to any app, so that
       # arg is not in the ARGV array and should be skipped over
       if ARGV[0] == 'help'
         @category = reversed_args.pop
       elsif ARGV[1] == 'cluster'
+        cluster = reversed_args.pop
+        @category = reversed_args.pop
+        @action = reversed_args.pop
+        @args = reversed_args.reverse
+      elsif ARGV[1] == 'node-pools'
         cluster = reversed_args.pop
         @category = reversed_args.pop
         @action = reversed_args.pop
@@ -103,6 +110,9 @@ module Seira
       if category == 'cluster'
         perform_action_validation(klass: command_class, action: action)
         command_class.new(action: action, args: args, context: passed_context, settings: settings).run
+      elsif category == 'node-pools'
+        perform_action_validation(klass: command_class, action: action)
+        command_class.new(action: action, args: args, context: passed_context, settings: settings).run
       elsif category == 'proxy'
         command_class.new.run
       else
@@ -132,7 +142,7 @@ module Seira
     def perform_action_validation(klass:, action:)
       return true if simple_cluster_change?
 
-      unless klass == Seira::Cluster || settings.applications.include?(app)
+      unless klass == Seira::Cluster || klass == Seira::NodePools || settings.applications.include?(app)
         puts "Invalid app name specified"
         exit(1)
       end
