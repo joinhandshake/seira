@@ -89,14 +89,14 @@ module Seira
       end
 
       command =
-          "gcloud container node-pools create #{new_pool_name} \
-          --cluster=#{context[:cluster]} \
-          --disk-size=#{disk_size} \
-          --image-type=#{image_type} \
-          --machine-type=#{machine_type} \
-          --num-nodes=#{num_nodes} \
-          --service-account=#{service_account}"
-        
+        "gcloud container node-pools create #{new_pool_name} \
+        --cluster=#{context[:cluster]} \
+        --disk-size=#{disk_size} \
+        --image-type=#{image_type} \
+        --machine-type=#{machine_type} \
+        --num-nodes=#{num_nodes} \
+        --service-account=#{service_account}"
+
       if system(command)
         puts 'New pool created successfully'
       else
