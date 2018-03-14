@@ -219,7 +219,7 @@ module Seira
       pod_name = matching_pods.first['metadata']['name']
       psql_command =
         if as_admin
-          root_password = Secrets.new(app: app, action: 'get', args: [], context: context).get("#{instance_name.gsub('-','_').upcase}_ROOT_PASSWORD")
+          root_password = Secrets.new(app: app, action: 'get', args: [], context: context).get("#{instance_name.tr('-', '_').upcase}_ROOT_PASSWORD")
           "psql postgres://postgres:#{root_password}@127.0.0.1:5432"
         else
           'psql'
