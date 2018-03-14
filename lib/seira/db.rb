@@ -202,6 +202,7 @@ module Seira
         <<~SQL
           REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM readonly;
           GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA "public" GRANT SELECT ON TABLES TO readonly;
         SQL
       execute_db_command(admin_commands, as_admin: true)
       execute_db_command(database_commands)
