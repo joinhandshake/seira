@@ -4,7 +4,7 @@ require_relative 'db/create'
 
 module Seira
   class Db
-    VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze].freeze
+    VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze create-readonly-user].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -36,6 +36,8 @@ module Seira
         run_kill
       when 'analyze'
         run_analyze
+      when 'create-readonly-user'
+        run_create_readonly_user
       else
         fail "Unknown command encountered"
       end
@@ -66,6 +68,7 @@ module Seira
       puts "ps: List running queries"
       puts "kill: Kill a query"
       puts "analyze: Display database performance information"
+      puts "create-readonly-user: Create a database user named 'readonly' with only SELECT access privileges"
     end
 
     def run_create
@@ -176,16 +179,53 @@ module Seira
       )
     end
 
-    def execute_db_command(sql_command)
+    def run_create_readonly_user
+      instance_name = primary_instance
+      env_name = instance_name.tr('-', '_').upcase
+
+      password = SecureRandom.urlsafe_base64(32)
+      if system("gcloud sql users create readonly '' --instance=#{instance_name} --password=#{password}")
+        puts "Created readonly user with password #{password}"
+      else
+        puts 'Failed to create readonly user'
+        exit(1)
+      end
+      Secrets.new(app: app, action: 'set', args: ["#{env_name}_READONLY_PASSWORD=#{password}"], context: context).run
+
+      puts 'Setting permissions...'
+      admin_commands =
+        <<~SQL
+          REVOKE cloudsqlsuperuser FROM readonly;
+          ALTER ROLE readonly NOCREATEDB NOCREATEROLE;
+        SQL
+      database_commands =
+        <<~SQL
+          REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM readonly;
+          GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA "public" GRANT SELECT ON TABLES TO readonly;
+        SQL
+      execute_db_command(admin_commands, as_admin: true)
+      execute_db_command(database_commands)
+    end
+
+    def execute_db_command(sql_command, as_admin: false)
       # TODO(josh): move pgbouncer naming logic here and in Create to a common location
-      tier = primary_instance.gsub("#{app}-", '')
+      instance_name = primary_instance
+      tier = instance_name.gsub("#{app}-", '')
       matching_pods = Helpers.fetch_pods(app: app, filters: { tier: tier })
       if matching_pods.empty?
         puts 'Could not find pgbouncer pod to connect to'
         exit 1
       end
       pod_name = matching_pods.first['metadata']['name']
-      exit 1 unless system("kubectl exec #{pod_name} --namespace #{app} -- psql -c \"#{sql_command}\"")
+      psql_command =
+        if as_admin
+          root_password = Secrets.new(app: app, action: 'get', args: [], context: context).get("#{instance_name.tr('-', '_').upcase}_ROOT_PASSWORD")
+          "psql postgres://postgres:#{root_password}@127.0.0.1:5432"
+        else
+          'psql'
+        end
+      exit 1 unless system("kubectl exec #{pod_name} --namespace #{app} -- #{psql_command} -c \"#{sql_command}\"")
     end
 
     def existing_instances
