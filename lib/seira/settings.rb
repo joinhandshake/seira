@@ -4,7 +4,7 @@ require 'yaml'
 module Seira
   class Settings
     DEFAULT_CONFIG_PATH = '.seira.yml'.freeze
-    
+
     attr_reader :config_path
 
     def initialize(config_path: DEFAULT_CONFIG_PATH)
@@ -38,6 +38,10 @@ module Seira
 
     def clusters
       settings['seira']['clusters']
+    end
+
+    def log_link_format
+      settings['seira']['log_link_format']
     end
 
     def full_cluster_name_for_shorthand(shorthand)

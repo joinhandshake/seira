@@ -111,6 +111,8 @@ module Seira
 
         puts "Running 'kubectl apply -f #{destination}'"
         system("kubectl apply -f #{destination}")
+        log_link = Helpers.log_link(context: context, app: app, query: unique_name)
+        puts "View logs at: #{log_link}" unless log_link.nil?
       end
 
       unless async
