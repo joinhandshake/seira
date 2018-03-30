@@ -45,7 +45,8 @@ module Seira
     end
 
     def run_list
-      puts `kubectl get pods --namespace=#{app} -o wide`
+      kubectl("get pods -o wide")
+      # puts `kubectl get pods --namespace=#{app} -o wide`
     end
 
     def run_delete
@@ -53,7 +54,8 @@ module Seira
     end
 
     def run_logs
-      puts `kubectl logs #{pod_name} --namespace=#{app} -c #{app}`
+      kubectl("logs #{pod_name} -c #{app}")
+      # puts `kubectl logs #{pod_name} --namespace=#{app} -c #{app}`
     end
 
     def run_top

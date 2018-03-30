@@ -3,6 +3,8 @@ require 'highline/import'
 require 'colorize'
 require 'tmpdir'
 
+require 'seira/commands'
+
 require "seira/version"
 require 'helpers'
 require 'seira/app'
@@ -19,10 +21,13 @@ require 'seira/settings'
 require 'seira/setup'
 require 'seira/node_pools'
 
+
 # A base runner class that does base checks and then delegates the actual
 # work for the command to a class in lib/seira folder.
 module Seira
   class Runner
+    include Seira::Commands
+
     CATEGORIES = {
       'secrets' => Seira::Secrets,
       'pods' => Seira::Pods,
