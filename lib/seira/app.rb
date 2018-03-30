@@ -53,7 +53,7 @@ module Seira
 
     def ask_cluster_for_current_revision
       tier = context[:settings].config_for_app(app)['golden_tier'] || 'web'
-      current_image = `kubectl get deployment --namespace=#{app} -l app=#{app},tier=#{tier} -o=jsonpath='{$.items[:1].spec.template.spec.containers[:1].image}'`.strip.chomp
+      current_image = kubectl("get deployment -l app=#{app},tier=#{tier} -o=jsonpath='{$.items[:1].spec.template.spec.containers[:1].image}'", context: context, return_output: true).strip.chomp
       current_revision = current_image.split(':').last
       current_revision
     end
@@ -63,7 +63,8 @@ module Seira
     def run_bootstrap
       # TODO: Verify that 00-namespace exists
       # TODO: Do conformance test on the yaml files before running anything, including that 00-namespace.yaml exists and has right name
-      system("kubectl apply -f kubernetes/#{context[:cluster]}/#{app}/00-namespace.yaml") # Create namespace before anything else
+      # Create namespace before anything else
+      kubectl("apply -f kubernetes/#{context[:cluster]}/#{app}/00-namespace.yaml", context: context)
       bootstrap_main_secret
       bootstrap_cloudsql_secret
       bootstrap_gcr_secret
@@ -113,8 +114,7 @@ module Seira
           replacement_hash: replacement_hash
         )
 
-        puts "Running 'kubectl apply -f #{destination}'"
-        system("kubectl apply -f #{destination}")
+        kubectl("apply -f #{destination}", context: context)
 
         unless async
           puts "Monitoring rollout status..."
@@ -144,7 +144,7 @@ module Seira
         end
         replicas = config['spec']['replicas'] if replicas == 'default'
         puts "scaling #{tier} to #{replicas}"
-        system("kubectl scale --namespace=#{app} --replicas=#{replicas} deployments/#{config['metadata']['name']}")
+        kubectl("scale --replicas=#{replicas} deployments/#{config['metadata']['name']}", context: context)
       end
     end
 
@@ -159,7 +159,7 @@ module Seira
       # 'internal' is a unique cluster/project "cluster". It always means production in terms of rails app.
       rails_env = Helpers.rails_env(context: context)
 
-      puts `kubectl create secret generic #{main_secret_name} --namespace #{app} --from-literal=RAILS_ENV=#{rails_env} --from-literal=RACK_ENV=#{rails_env}`
+      kubectl("create secret generic #{main_secret_name} --from-literal=RAILS_ENV=#{rails_env} --from-literal=RACK_ENV=#{rails_env}", context: context)
     end
 
     # We use a secret in our container to use a service account to connect to our cloudsql databases. The secret in 'default'
