@@ -5,6 +5,8 @@ require 'fileutils'
 # Example usages:
 module Seira
   class Cluster
+    include Seira::Commands
+
     VALID_ACTIONS = %w[help bootstrap upgrade-master].freeze
     SUMMARY = "For managing whole clusters.".freeze
 
@@ -49,12 +51,12 @@ module Seira
     end
 
     def self.current_cluster
-      `kubectl config current-context`.chomp.strip
+      Seira::Commands.kubectl("config current-context", context: :none, return_output: true).chomp.strip
     end
 
     def current
       puts `gcloud config get-value project`
-      puts `kubectl config current-context`
+      puts current_cluster
     end
 
     private

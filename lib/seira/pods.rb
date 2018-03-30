@@ -2,6 +2,8 @@ require 'json'
 
 module Seira
   class Pods
+    include Seira::Commands
+
     VALID_ACTIONS = %w[help list delete logs top run connect].freeze
     SUMMARY = "Manage your application's pods.".freeze
 
@@ -45,21 +47,19 @@ module Seira
     end
 
     def run_list
-      kubectl("get pods -o wide")
-      # puts `kubectl get pods --namespace=#{app} -o wide`
+      kubectl("get pods -o wide", context: context)
     end
 
     def run_delete
-      puts `kubectl delete pod #{pod_name} --namespace=#{app}`
+      kubectl("delete pod #{pod_name}", context: context)
     end
 
     def run_logs
       kubectl("logs #{pod_name} -c #{app}")
-      # puts `kubectl logs #{pod_name} --namespace=#{app} -c #{app}`
     end
 
     def run_top
-      puts `kubectl top pod #{pod_name} --namespace=#{app} --containers`
+      kubectl("top pod #{pod_name} --containers", context: context)
     end
 
     def run_connect

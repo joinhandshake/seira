@@ -1,5 +1,7 @@
 module Seira
   class Proxy
+    include Seira::Commands
+
     SUMMARY = "Open up the proxy UI for a given cluster.".freeze
 
     def initialize
@@ -7,7 +9,7 @@ module Seira
 
     def run
       begin
-        system("kubectl proxy")
+        kubectl("proxy", context: :none)
       rescue
       end
     end

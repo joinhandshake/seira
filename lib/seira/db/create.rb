@@ -174,7 +174,7 @@ module Seira
       end
 
       def create_pgbouncer_secret(db_user:, db_password:)
-        puts `kubectl create secret generic #{pgbouncer_secret_name} --namespace #{app} --from-literal=DB_USER=#{db_user} --from-literal=DB_PASSWORD=#{db_password}`
+        kubectl("create secret generic #{pgbouncer_secret_name} --from-literal=DB_USER=#{db_user} --from-literal=DB_PASSWORD=#{db_password}", context: context)
       end
 
       def write_database_env(key:, db_user:, db_password:)

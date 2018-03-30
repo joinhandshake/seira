@@ -5,6 +5,8 @@ require 'fileutils'
 # Example usages:
 module Seira
   class NodePools
+    include Seira::Commands
+
     VALID_ACTIONS = %w[help list list-nodes add cordon drain delete].freeze
     SUMMARY = "For managing node pools for a cluster.".freeze
 
@@ -112,7 +114,7 @@ module Seira
       nodes = nodes_for_pool(node_pool_name)
 
       nodes.each do |node|
-        unless system("kubectl cordon #{node}")
+        unless kubectl("cordon #{node}", context: :none)
           puts "Failed to cordon node #{node}"
           exit(1)
         end
@@ -135,7 +137,7 @@ module Seira
         # --delete-local-data prevents failing due to presence of local data, which cannot be moved
         #   but is bad practice to use for anything that can't be lost
         puts "Draining #{node}"
-        unless system("kubectl drain --force --ignore-daemonsets --delete-local-data #{node}")
+        unless kubectl("drain --force --ignore-daemonsets --delete-local-data #{node}", context: :none)
           puts "Failed to drain node #{node}"
           exit(1)
         end
@@ -169,7 +171,7 @@ module Seira
     end
 
     def nodes_for_pool(pool_name)
-      `kubectl get nodes -l cloud.google.com/gke-nodepool=#{pool_name} -o name`.split("\n")
+      kubectl("get nodes -l cloud.google.com/gke-nodepool=#{pool_name} -o name", context: :none, return_output: true).split("\n")
     end
 
     def fail_if_lone_node_pool

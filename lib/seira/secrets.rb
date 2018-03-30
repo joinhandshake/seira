@@ -8,6 +8,8 @@ require 'base64'
 # TODO: Can we avoid writing to disk completely and instead pipe in raw json?
 module Seira
   class Secrets
+    include Seira::Commands
+
     VALID_ACTIONS = %w[help get set unset list list-decoded].freeze
     PGBOUNCER_SECRETS_NAME = 'pgbouncer-secrets'.freeze
     SUMMARY = "Manage your application's secrets and environment variables.".freeze
@@ -45,7 +47,7 @@ module Seira
 
     def copy_secret_across_namespace(key:, to:, from:)
       puts "Copying the #{key} secret from namespace #{from} to #{to}."
-      json_string = `kubectl get secret #{key} --namespace #{from} -o json`
+      json_string = kubectl("get secret #{key} -o json", context: context, return_output: true)
       secrets = JSON.parse(json_string)
 
       # At this point we would preferably simply do a write_secrets call, but the metadata is highly coupled to old
@@ -145,10 +147,10 @@ module Seira
         end
 
         # The command we use depends on if it already exists or not
-        secret_exists = system("kubectl get secret #{secret_name} --namespace #{app} > /dev/null")
+        secret_exists = kubectl("get secret #{secret_name}", context: context) # TODO: Do not log, pipe output to dev/null
         command = secret_exists ? "replace" : "create"
 
-        if system("kubectl #{command} --namespace #{app} -f #{file_name}")
+        if kubectl("#{command} -f #{file_name}", context: context)
           puts "Successfully created/replaced #{secret_name} secret #{key} in cluster #{Seira::Cluster.current_cluster}"
         else
           puts "Failed to update secret"
@@ -158,7 +160,7 @@ module Seira
 
     # Returns the still-base64encoded secrets hashmap
     def fetch_current_secrets
-      json_string = `kubectl get secret #{main_secret_name} --namespace #{app} -o json`
+      json_string = kubectl("get secret #{main_secret_name} -o json", context: context, return_output: true)
       json = JSON.parse(json_string)
       fail "Unexpected Kind" unless json['kind'] == 'Secret'
       json

@@ -8,15 +8,25 @@ module Seira
         @context = context
       end
 
-      def invoke
-        puts "Calling kubectl command #{calculated_command.green}"
-        system(calculated_command)
+      def invoke(clean_output: false, return_output: false)
+        puts "Calling: #{calculated_command.green}" unless clean_output
+        
+        if return_output
+          `#{calculated_command}`
+        else
+          system(calculated_command)
+        end
       end
 
       private
 
       def calculated_command
-        @_calculated_command ||= "kubectl #{command} --namespace=#{context[:app]}"
+        @_calculated_command ||= 
+          if context == :none
+            "kubectl #{command}"
+          else
+            "kubectl #{command} --namespace=#{context[:app]}"
+          end
       end
     end
   end

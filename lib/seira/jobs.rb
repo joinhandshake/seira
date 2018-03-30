@@ -2,6 +2,8 @@ require 'json'
 
 module Seira
   class Jobs
+    include Seira::Commands
+
     VALID_ACTIONS = %w[help list delete run].freeze
     SUMMARY = "Manage your application's jobs.".freeze
 
@@ -39,11 +41,11 @@ module Seira
     end
 
     def run_list
-      puts `kubectl get jobs --namespace=#{app} -o wide`
+      kubectl("get jobs -o wide", context: context)
     end
 
     def run_delete
-      puts `kubectl delete job #{job_name} --namespace=#{app}`
+      kubectl("delete job #{job_name}", context: context)
     end
 
     def run_run
@@ -109,8 +111,7 @@ module Seira
         end
         File.open("#{destination}/#{file_name}", 'w') { |file| file.write(new_contents) }
 
-        puts "Running 'kubectl apply -f #{destination}'"
-        system("kubectl apply -f #{destination}")
+        kubectl("apply -f #{destination}", context: context)
         log_link = Helpers.log_link(context: context, app: app, query: unique_name)
         puts "View logs at: #{log_link}" unless log_link.nil?
       end
@@ -120,7 +121,7 @@ module Seira
         print 'Waiting for job to complete...'
         job_spec = nil
         loop do
-          job_spec = JSON.parse(`kubectl --namespace=#{app} get job #{unique_name} -o json`)
+          job_spec = JSON.parse(kubectl("get job #{unique_name} -o json", context: context, return_output: true))
           break if !job_spec['status']['succeeded'].nil? || !job_spec['status']['failed'].nil?
           print '.'
           sleep 3
@@ -139,7 +140,7 @@ module Seira
           puts "Job finished with status #{status}. Leaving Job object in cluster, clean up manually when confirmed."
         else
           print "Job finished with status #{status}. Deleting Job from cluster for cleanup."
-          system("kubectl delete job #{unique_name} -n #{app}")
+          kubectl("delete job #{unique_name}", context: context)
         end
       end
     end
