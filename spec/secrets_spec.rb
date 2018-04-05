@@ -1,21 +1,22 @@
 require 'spec_helper'
 
 describe Seira::Secrets do
-  subject { described_class.new(app: 'appname', action: @action, args: @args, context: { cluster: 'clustername' }) }
+  let(:context) { { cluster: 'clustername' } }
+  subject { described_class.new(app: 'appname', action: @action, args: @args, context: context) }
 
   def run_and_expect_update(old_secrets:, action:, args:, new_secrets:)
     @action = action
     @args = args
 
     allow(Seira::Cluster).to receive(:current_cluster).and_return('clustername')
-    expect(subject).to receive(:`).with('kubectl get secret appname-secrets --namespace appname -o json').and_return(old_secrets.to_json)
-    expect(subject).to receive(:system).with('kubectl get secret appname-secrets --namespace appname > /dev/null').and_return(true)
+    expect(subject).to receive(:kubectl).with('get secret appname-secrets -o json', context: context, return_output: anything).and_return(old_secrets.to_json)
+    expect(subject).to receive(:kubectl).with('get secret appname-secrets', context: context).and_return(true)
     expect(Dir).to receive(:mktmpdir).and_call_original # Make sure we are operating in a temp directory
     expect(File).to receive(:open) do |filename, &block|
       file = double('file')
       expect(file).to receive(:write).with(new_secrets.to_json)
       block.call(file)
-      expect(subject).to receive(:system).with("kubectl replace --namespace appname -f #{filename}").and_return(true)
+      expect(subject).to receive(:kubectl).with("replace -f #{filename}", context: context).and_return(true)
     end
 
     subject.run
