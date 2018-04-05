@@ -21,7 +21,6 @@ require 'seira/settings'
 require 'seira/setup'
 require 'seira/node_pools'
 
-
 # A base runner class that does base checks and then delegates the actual
 # work for the command to a class in lib/seira folder.
 module Seira

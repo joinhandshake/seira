@@ -10,7 +10,7 @@ module Seira
 
       def invoke(clean_output: false, return_output: false)
         puts "Calling: #{calculated_command.green}" unless clean_output
-        
+
         if return_output
           `#{calculated_command}`
         else
@@ -21,7 +21,7 @@ module Seira
       private
 
       def calculated_command
-        @_calculated_command ||= 
+        @_calculated_command ||=
           if context == :none
             "kubectl #{command}"
           else

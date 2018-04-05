@@ -78,7 +78,6 @@ module Seira
         exit(1)
       end
 
-      # puts `kubectl create secret generic gcr-secret --namespace default --from-file=.dockercfg=#{dockercfg_location}`
       puts `kubectl create secret docker-registry gcr-secret --docker-username=_json_key --docker-password="$(cat #{dockercfg_location})" --docker-server=https://gcr.io --docker-email=doesnotmatter@example.com`
       puts `kubectl create secret generic cloudsql-credentials --namespace default --from-file=credentials.json=#{cloudsql_credentials_location}`
     end
