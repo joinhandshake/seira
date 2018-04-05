@@ -1,6 +1,8 @@
 module Seira
   class Db
     class Create
+      include Seira::Commands
+
       attr_reader :app, :action, :args, :context
 
       attr_reader :name, :version, :cpu, :memory, :storage, :replica_for, :make_highly_available

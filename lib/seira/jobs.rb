@@ -121,7 +121,7 @@ module Seira
         print 'Waiting for job to complete...'
         job_spec = nil
         loop do
-          job_spec = JSON.parse(kubectl("get job #{unique_name} -o json", context: context, return_output: true))
+          job_spec = JSON.parse(kubectl("get job #{unique_name} -o json", context: context, return_output: true, clean_output: true))
           break if !job_spec['status']['succeeded'].nil? || !job_spec['status']['failed'].nil?
           print '.'
           sleep 3
