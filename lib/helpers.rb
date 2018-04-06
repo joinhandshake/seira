@@ -1,5 +1,7 @@
 module Seira
   class Helpers
+    include Seira::Commands
+
     class << self
       def rails_env(context:)
         if context[:cluster] == 'internal'
@@ -11,7 +13,8 @@ module Seira
 
       def fetch_pods(filters:, app:)
         filter_string = { app: app }.merge(filters).map { |k, v| "#{k}=#{v}" }.join(',')
-        JSON.parse(`kubectl get pods --namespace=#{app} -o json --selector=#{filter_string}`)['items']
+        output = Seira::Commands.kubectl("get pods -o json --selector=#{filter_string}", context: { app: app }, return_output: true)
+        JSON.parse(output)['items']
       end
 
       def log_link(context:, app:, query:)

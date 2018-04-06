@@ -3,6 +3,8 @@ require 'highline/import'
 require 'colorize'
 require 'tmpdir'
 
+require 'seira/commands'
+
 require "seira/version"
 require 'helpers'
 require 'seira/app'
@@ -23,6 +25,8 @@ require 'seira/node_pools'
 # work for the command to a class in lib/seira folder.
 module Seira
   class Runner
+    include Seira::Commands
+
     CATEGORIES = {
       'secrets' => Seira::Secrets,
       'pods' => Seira::Pods,
@@ -128,7 +132,10 @@ module Seira
         cluster: cluster,
         project: project,
         settings: settings,
-        default_zone: settings.default_zone
+        default_zone: settings.default_zone,
+        app: app,
+        action: action,
+        args: args
       }
     end
 
