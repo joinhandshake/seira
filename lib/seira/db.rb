@@ -182,27 +182,30 @@ module Seira
     def run_create_readonly_user
       instance_name = primary_instance
       env_name = instance_name.tr('-', '_').upcase
+      user_name = 'readonly'
 
       password = SecureRandom.urlsafe_base64(32)
-      if gcloud("sql users create readonly '' --instance=#{instance_name} --password=#{password}", context: context, format: :boolean)
-        puts "Created readonly user with password #{password}"
+      if gcloud("sql users create #{user_name} '' --instance=#{instance_name} --password=#{password}", context: context, format: :boolean)
+        puts "Created user '#{user_name}' with password #{password}"
       else
-        puts 'Failed to create readonly user'
+        puts "Failed to create user '#{user_name}'"
         exit(1)
       end
-      Secrets.new(app: app, action: 'set', args: ["#{env_name}_READONLY_PASSWORD=#{password}"], context: context).run
+
+      # TODO: Do we need this, and if we do use 'user_name'
+      # Secrets.new(app: app, action: 'set', args: ["#{env_name}_READONLY_PASSWORD=#{password}"], context: context).run
 
       puts 'Setting permissions...'
       admin_commands =
         <<~SQL
-          REVOKE cloudsqlsuperuser FROM readonly;
-          ALTER ROLE readonly NOCREATEDB NOCREATEROLE;
+          REVOKE cloudsqlsuperuser FROM #{user_name};
+          ALTER ROLE #{user_name} NOCREATEDB NOCREATEROLE;
         SQL
       database_commands =
         <<~SQL
-          REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM readonly;
-          GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly;
-          ALTER DEFAULT PRIVILEGES IN SCHEMA "public" GRANT SELECT ON TABLES TO readonly;
+          REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM #{user_name};
+          GRANT SELECT ON ALL TABLES IN SCHEMA public TO #{user_name};
+          ALTER DEFAULT PRIVILEGES IN SCHEMA "public" GRANT SELECT ON TABLES TO #{user_name};
         SQL
       execute_db_command(admin_commands, as_admin: true)
       execute_db_command(database_commands)
