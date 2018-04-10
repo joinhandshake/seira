@@ -181,16 +181,14 @@ module Seira
       )
     end
 
-    # Example: seira staging app-name db create-readonly-user --username=readonly-user --instance=app-name-blue-cow
+    # Example: seira staging app-name db create-readonly-user --username=readonly-user
     def run_create_readonly_user
-      instance_name = primary_instance # Default to an instance name based on DATABASE_URL pgbouncer service
+      instance_name = primary_instance # Always make user changes to primary instance, and they will propogate to replicas
       user_name = nil
 
       args.each do |arg|
         if arg.start_with? '--username='
           user_name = arg.split('=')[1]
-        elsif arg.start_with? '--instance='
-          instance_name = arg.split('=')[1]
         else
           puts "Warning: Unrecognized argument '#{arg}'"
         end
@@ -209,7 +207,7 @@ module Seira
 
       valid_instance_names = existing_instances(remove_app_prefix: false).join(', ')
       if instance_name.nil? || instance_name.strip.chomp == '' || !valid_instance_names.include?(instance_name)
-        puts "Please specify the name of the instance to create, such as --instance=instance-name, which must be one of: #{valid_instance_names}"
+        puts "Could not find a valid instance name - does the DATABASE_URL have a value? Must be one of: #{valid_instance_names}"
         exit(1)
       end
 
