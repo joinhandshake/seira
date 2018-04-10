@@ -167,7 +167,7 @@ module Seira
 
     # TODO: Represent by a ruby object?
     def node_pools
-      gcloud("container node-pools list --cluster #{context[:cluster]}", context: context, format: :json)
+      JSON.parse(gcloud("container node-pools list --cluster #{context[:cluster]}", context: context, format: :json))
     end
 
     def nodes_for_pool(pool_name)

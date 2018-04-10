@@ -23,21 +23,20 @@ module Seira
       private
 
       def calculated_command
-        @_calculated_command ||=
-          rv = nil
-
-          rv =
-            if context == :none
-              "gcloud #{command}"
+        @_calculated_command ||= begin
+          rv = 
+            if format == :json
+              "gcloud #{command} --format=json"
             else
-              "gcloud #{command} --project=#{context[:project]}"
+              "gcloud #{command}"
             end
-        
-          if format == :json
-            rv = "#{rv} --format json"
+
+          unless context.nil?
+            rv = "#{rv} --project=#{context[:project]}"
           end
 
           rv
+        end
       end
     end
   end

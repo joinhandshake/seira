@@ -21,12 +21,13 @@ module Seira
       private
 
       def calculated_command
-        @_calculated_command ||=
+        @_calculated_command ||= begin
           if context == :none
             "kubectl #{command}"
           else
             "kubectl #{command} --namespace=#{context[:app]}"
           end
+        end
       end
     end
   end
