@@ -24,7 +24,7 @@ module Seira
 
       def calculated_command
         @_calculated_command ||= begin
-          rv = 
+          rv =
             if format == :json
               "gcloud #{command} --format=json"
             else

@@ -105,7 +105,7 @@ module Seira
       puts "Connecting to #{name}..."
       root_password = Secrets.new(app: app, action: 'get', args: [], context: context).get("#{name.tr('-', '_').upcase}_ROOT_PASSWORD") || "Not found in secrets"
       puts "Your root password for 'postgres' user is: #{root_password}"
-      system("gcloud sql connect #{name}") # TODO: Update this to gcloud call?
+      system("gcloud sql connect #{name}")
     end
 
     def run_ps
