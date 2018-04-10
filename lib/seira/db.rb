@@ -181,7 +181,7 @@ module Seira
       )
     end
 
-    # Example: seira staging app-name db create-readonly-user --username=readonly-user
+    # Example: seira staging app-name db create-readonly-user --username=readonlyuser
     def run_create_readonly_user
       instance_name = primary_instance # Always make user changes to primary instance, and they will propogate to replicas
       user_name = nil
@@ -195,7 +195,7 @@ module Seira
       end
 
       if user_name.nil? || user_name.strip.chomp == ''
-        puts "Please specify the name of the read-only user to create, such as --username=test-username"
+        puts "Please specify the name of the read-only user to create, such as --username=testuser"
         exit(1)
       end
 
