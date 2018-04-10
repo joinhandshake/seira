@@ -13,6 +13,10 @@ module Seira
         filter_string = { app: app }.merge(filters).map { |k, v| "#{k}=#{v}" }.join(',')
         JSON.parse(`kubectl get pods --namespace=#{app} -o json --selector=#{filter_string}`)['items']
       end
+
+      def get_secret(app:, key:, context: {})
+        Secrets.new(app: app, action: 'get', args: [], context: context).get(key)
+      end
     end
   end
 end
