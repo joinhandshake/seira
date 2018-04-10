@@ -54,8 +54,12 @@ module Seira
       Seira::Commands.kubectl("config current-context", context: :none, return_output: true).chomp.strip
     end
 
+    def self.current_project
+      Seira::Commands.gcloud("config get-value project", context: :none, return_output: true).chomp.strip
+    end
+
     def current
-      puts `gcloud config get-value project`
+      puts current_project
       puts current_cluster
     end
 
@@ -93,7 +97,7 @@ module Seira
       end
 
       # Ensure the specified version is supported by GKE
-      server_config = JSON.parse(`gcloud container get-server-config --format json`)
+      server_config = gcloud("container get-server-config", format: :json, context: context)
       valid_versions = server_config['validMasterVersions']
       unless valid_versions.include? new_version
         puts "Version #{new_version} is unsupported. Supported versions are:"
@@ -101,7 +105,7 @@ module Seira
         exit(1)
       end
 
-      cluster_config = JSON.parse(`gcloud container clusters describe #{cluster} --format json`)
+      cluster_config = JSON.parse(gcloud("container clusters describe #{cluster}", format: :json, context: context))
 
       # Update the master node first
       exit(1) unless Highline.agree("Are you sure you want to upgrade cluster #{cluster} master to version #{new_version}? Services should continue to run fine, but the cluster control plane will be offline.")
@@ -110,7 +114,7 @@ module Seira
       if cluster_config['currentMasterVersion'] == new_version
         # Master has already been updated; this step is not needed
         puts 'Already up to date!'
-      elsif system("gcloud container clusters upgrade #{cluster} --cluster-version=#{new_version} --master")
+      elsif gcloud("container clusters upgrade #{cluster} --cluster-version=#{new_version} --master", format: :boolean, context: context)
         puts 'Master updated successfully!'
       else
         puts 'Failed to update master.'

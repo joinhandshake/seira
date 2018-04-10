@@ -77,7 +77,7 @@ module Seira
 
     def run_delete
       name = "#{app}-#{args[0]}"
-      if system("gcloud sql instances delete #{name}")
+      if gcloud("sql instances delete #{name}", context: context, format: :boolean)
         puts "Successfully deleted sql instance #{name}"
 
         # TODO: Automate the below
@@ -93,7 +93,7 @@ module Seira
 
     def run_restart
       name = "#{app}-#{args[0]}"
-      if system("gcloud sql instances restart #{name}")
+      if gcloud("sql instances restart #{name}", context: context, format: :boolean)
         puts "Successfully restarted sql instance #{name}"
       else
         puts "Failed to restart sql instance #{name}"
@@ -105,7 +105,7 @@ module Seira
       puts "Connecting to #{name}..."
       root_password = Secrets.new(app: app, action: 'get', args: [], context: context).get("#{name.tr('-', '_').upcase}_ROOT_PASSWORD") || "Not found in secrets"
       puts "Your root password for 'postgres' user is: #{root_password}"
-      system("gcloud sql connect #{name}")
+      system("gcloud sql connect #{name}") # TODO: Update this to gcloud call?
     end
 
     def run_ps
@@ -184,7 +184,7 @@ module Seira
       env_name = instance_name.tr('-', '_').upcase
 
       password = SecureRandom.urlsafe_base64(32)
-      if system("gcloud sql users create readonly '' --instance=#{instance_name} --password=#{password}")
+      if gcloud("sql users create readonly '' --instance=#{instance_name} --password=#{password}", context: context, format: :boolean)
         puts "Created readonly user with password #{password}"
       else
         puts 'Failed to create readonly user'
@@ -229,6 +229,7 @@ module Seira
     end
 
     def existing_instances
+      # TODO: Update to to use gcloud method
       `gcloud sql instances list --uri`.split("\n").map { |uri| uri.split('/').last }.select { |name| name.start_with? "#{app}-" }.map { |name| name.gsub(/^#{app}-/, '') }
     end
   end
