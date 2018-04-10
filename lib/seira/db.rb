@@ -4,6 +4,8 @@ require_relative 'db/create'
 
 module Seira
   class Db
+    include Seira::Commands
+
     VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze create-readonly-user].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
@@ -68,7 +70,7 @@ module Seira
       puts "ps: List running queries"
       puts "kill: Kill a query"
       puts "analyze: Display database performance information"
-      puts "create-readonly-user: Create a database user named 'readonly' with only SELECT access privileges"
+      puts "create-readonly-user: Create a database user named by --username=<name> with only SELECT access privileges"
     end
 
     def run_create
@@ -179,30 +181,55 @@ module Seira
       )
     end
 
+    # Example: seira staging app-name db create-readonly-user --username=readonlyuser
     def run_create_readonly_user
-      instance_name = primary_instance
-      env_name = instance_name.tr('-', '_').upcase
+      instance_name = primary_instance # Always make user changes to primary instance, and they will propogate to replicas
+      user_name = nil
 
-      password = SecureRandom.urlsafe_base64(32)
-      if gcloud("sql users create readonly '' --instance=#{instance_name} --password=#{password}", context: context, format: :boolean)
-        puts "Created readonly user with password #{password}"
-      else
-        puts 'Failed to create readonly user'
+      args.each do |arg|
+        if arg.start_with? '--username='
+          user_name = arg.split('=')[1]
+        else
+          puts "Warning: Unrecognized argument '#{arg}'"
+        end
+      end
+
+      if user_name.nil? || user_name.strip.chomp == ''
+        puts "Please specify the name of the read-only user to create, such as --username=testuser"
         exit(1)
       end
-      Secrets.new(app: app, action: 'set', args: ["#{env_name}_READONLY_PASSWORD=#{password}"], context: context).run
+
+      # Require that the name be alpha only for simplicity and strict but basic validation
+      if user_name.match(/\A[a-zA-Z]*\z/).nil?
+        puts "Username must be characters only"
+        exit(1)
+      end
+
+      valid_instance_names = existing_instances(remove_app_prefix: false).join(', ')
+      if instance_name.nil? || instance_name.strip.chomp == '' || !valid_instance_names.include?(instance_name)
+        puts "Could not find a valid instance name - does the DATABASE_URL have a value? Must be one of: #{valid_instance_names}"
+        exit(1)
+      end
+
+      password = SecureRandom.urlsafe_base64(32)
+      if gcloud("sql users create #{user_name} '' --instance=#{instance_name} --password=#{password}", context: context, format: :boolean)
+        puts "Created user '#{user_name}' with password #{password}"
+      else
+        puts "Failed to create user '#{user_name}'"
+        exit(1)
+      end
 
       puts 'Setting permissions...'
       admin_commands =
         <<~SQL
-          REVOKE cloudsqlsuperuser FROM readonly;
-          ALTER ROLE readonly NOCREATEDB NOCREATEROLE;
+          REVOKE cloudsqlsuperuser FROM #{user_name};
+          ALTER ROLE #{user_name} NOCREATEDB NOCREATEROLE;
         SQL
       database_commands =
         <<~SQL
-          REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM readonly;
-          GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly;
-          ALTER DEFAULT PRIVILEGES IN SCHEMA "public" GRANT SELECT ON TABLES TO readonly;
+          REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM #{user_name};
+          GRANT SELECT ON ALL TABLES IN SCHEMA public TO #{user_name};
+          ALTER DEFAULT PRIVILEGES IN SCHEMA "public" GRANT SELECT ON TABLES TO #{user_name};
         SQL
       execute_db_command(admin_commands, as_admin: true)
       execute_db_command(database_commands)
@@ -228,9 +255,14 @@ module Seira
       exit 1 unless system("kubectl exec #{pod_name} --namespace #{app} -- #{psql_command} -c \"#{sql_command}\"")
     end
 
-    def existing_instances
-      # TODO: Update to to use gcloud method
-      `gcloud sql instances list --uri`.split("\n").map { |uri| uri.split('/').last }.select { |name| name.start_with? "#{app}-" }.map { |name| name.gsub(/^#{app}-/, '') }
+    def existing_instances(remove_app_prefix: true)
+      plain_list = `gcloud sql instances list --uri`.split("\n").map { |uri| uri.split('/').last }.select { |name| name.start_with? "#{app}-" }
+
+      if remove_app_prefix
+        plain_list.map { |name| name.gsub(/^#{app}-/, '') }
+      else
+        plain_list
+      end
     end
   end
 end
