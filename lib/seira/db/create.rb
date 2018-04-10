@@ -238,7 +238,7 @@ metadata:
     tier: #{pgbouncer_tier}
     database: #{name}
 spec:
-  replicas: 1
+  replicas: 2
   minReadySeconds: 20
   strategy:
     type: RollingUpdate
