@@ -161,12 +161,12 @@ module Seira
           create_pgbouncer_secret(db_user: 'proxyuser', db_password: proxyuser_password)
           Secrets.new(app: app, action: 'set', args: ["#{env_name}_ROOT_PASSWORD=#{root_password}"], context: context).run
           # Set DATABASE_URL if not already set
-          write_database_env(key: "DATABASE_URL", db_user: 'proxyuser', db_password: proxyuser_password) if Helpers.get_secret(app: app, context: context, key: "DATABASE_URL").nil?
+          write_database_env(key: "DATABASE_URL", db_user: 'proxyuser', db_password: proxyuser_password) if Helpers.get_secret(context: context, key: "DATABASE_URL").nil?
           write_database_env(key: "#{env_name}_DB_URL", db_user: 'proxyuser', db_password: proxyuser_password)
         else
           # When creating a replica, we cannot manage users on the replica. We must manage the users on the primary, which the replica
           # inherits. For now we will use the same credentials that the primary uses.
-          primary_uri = URI.parse(Helpers.get_secret(app: app, context: context, key: 'DATABASE_URL'))
+          primary_uri = URI.parse(Helpers.get_secret(context: context, key: 'DATABASE_URL'))
           primary_user = primary_uri.user
           primary_password = primary_uri.password
           create_pgbouncer_secret(db_user: primary_user, db_password: primary_password)

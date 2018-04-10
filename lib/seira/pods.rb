@@ -64,7 +64,7 @@ module Seira
 
     def run_connect
       # If a pod name is specified, connect to that pod; otherwise pick a random web pod
-      target_pod_name = pod_name || Helpers.fetch_pods(app: app, filters: { tier: 'web' }).sample&.dig('metadata', 'name')
+      target_pod_name = pod_name || Helpers.fetch_pods(context: context, filters: { tier: 'web' }).sample&.dig('metadata', 'name')
 
       if target_pod_name
         connect_to_pod(target_pod_name)
@@ -106,7 +106,7 @@ module Seira
       command = args.join(' ')
 
       # Find a 'template' pod from the proper tier
-      template_pod = Helpers.fetch_pods(app: app, filters: { tier: tier }).first
+      template_pod = Helpers.fetch_pods(context: context, filters: { tier: tier }).first
       if template_pod.nil?
         puts "Unable to find #{tier} tier pod to copy config from"
         exit(1)
