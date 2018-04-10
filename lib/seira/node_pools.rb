@@ -58,7 +58,7 @@ module Seira
     # TODO: Info about what is running on it?
     # TODO: What information do we get in the json format we could include here?
     def run_list
-      gcloud("sql container node-pools list --cluster #{context[:cluster]}", context: context, format: :boolean)
+      gcloud("container node-pools list --cluster #{context[:cluster]}", context: context, format: :boolean)
     end
 
     def run_list_nodes
