@@ -47,7 +47,7 @@ module Seira
 
     def copy_secret_across_namespace(key:, to:, from:)
       puts "Copying the #{key} secret from namespace #{from} to #{to}."
-      json_string = kubectl("get secret #{key} -o json", context: context, return_output: true)
+      json_string = kubectl("get secret #{key} -o json -n #{from}", context: :none, return_output: true)
       secrets = JSON.parse(json_string)
 
       # At this point we would preferably simply do a write_secrets call, but the metadata is highly coupled to old
