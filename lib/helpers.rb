@@ -25,6 +25,10 @@ module Seira
         link.gsub! 'QUERY', query
         link
       end
+
+      def get_secret(app:, key:, context: {})
+        Secrets.new(app: app, action: 'get', args: [], context: context).get(key)
+      end
     end
   end
 end
