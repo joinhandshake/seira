@@ -68,7 +68,7 @@ module Seira
       puts "ps: List running queries"
       puts "kill: Kill a query"
       puts "analyze: Display database performance information"
-      puts "create-readonly-user: Create a database user named 'readonly' with only SELECT access privileges"
+      puts "create-readonly-user: Create a database user named by the first argument with only SELECT access privileges"
     end
 
     def run_create
@@ -182,7 +182,12 @@ module Seira
     def run_create_readonly_user
       instance_name = primary_instance
       env_name = instance_name.tr('-', '_').upcase
-      user_name = 'readonly'
+      user_name = args.first
+
+      unless user_name.present?
+        puts "Please specify the name of the read-only user to create as the first argument"
+        exit(1)
+      end
 
       password = SecureRandom.urlsafe_base64(32)
       if gcloud("sql users create #{user_name} '' --instance=#{instance_name} --password=#{password}", context: context, format: :boolean)
