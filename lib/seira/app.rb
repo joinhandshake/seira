@@ -6,6 +6,8 @@ require 'fileutils'
 # seira staging specs app bootstrap
 module Seira
   class App
+    include Seira::Commands
+
     VALID_ACTIONS = %w[help bootstrap apply restart scale revision].freeze
     SUMMARY = "Bootstrap, scale, configure, restart, your apps.".freeze
 
