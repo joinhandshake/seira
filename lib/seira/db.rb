@@ -219,9 +219,6 @@ module Seira
         exit(1)
       end
 
-      # TODO: Do we need this, and if we do use 'user_name'
-      # Secrets.new(app: app, action: 'set', args: ["#{env_name}_READONLY_PASSWORD=#{password}"], context: context).run
-
       puts 'Setting permissions...'
       admin_commands =
         <<~SQL
@@ -234,8 +231,8 @@ module Seira
           GRANT SELECT ON ALL TABLES IN SCHEMA public TO #{user_name};
           ALTER DEFAULT PRIVILEGES IN SCHEMA "public" GRANT SELECT ON TABLES TO #{user_name};
         SQL
-      execute_db_command(admin_commands, instance_name: instance_name, as_admin: true)
-      execute_db_command(database_commands, instance_name: instance_name)
+      execute_db_command(admin_commands, as_admin: true)
+      execute_db_command(database_commands)
     end
 
     def execute_db_command(sql_command, as_admin: false)
