@@ -70,7 +70,7 @@ module Seira
       puts "ps: List running queries"
       puts "kill: Kill a query"
       puts "analyze: Display database performance information"
-      puts "create-readonly-user: Create a database user named by the first argument with only SELECT access privileges"
+      puts "create-readonly-user: Create a database user named by --username=<name> with only SELECT access privileges"
     end
 
     def run_create
