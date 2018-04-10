@@ -4,6 +4,8 @@ require_relative 'db/create'
 
 module Seira
   class Db
+    include Seira::Commands
+
     VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze create-readonly-user].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
@@ -179,13 +181,35 @@ module Seira
       )
     end
 
+    # Example: seira staging app-name db create-readonly-user --username=readonly-user --instance=app-name-blue-cow
     def run_create_readonly_user
-      instance_name = primary_instance
-      env_name = instance_name.tr('-', '_').upcase
-      user_name = args.first
+      instance_name = primary_instance # Default to an instance name based on DATABASE_URL pgbouncer service
+      user_name = nil
 
-      unless user_name.present?
-        puts "Please specify the name of the read-only user to create as the first argument"
+      args.each do |arg|
+        if arg.start_with? '--username='
+          user_name = arg.split('=')[1]
+        elsif arg.start_with? '--instance='
+          instance_name = arg.split('=')[1]
+        else
+          puts "Warning: Unrecognized argument '#{arg}'"
+        end
+      end
+
+      if user_name.nil? || user_name.strip.chomp == ''
+        puts "Please specify the name of the read-only user to create, such as --username=test-username"
+        exit(1)
+      end
+
+      # Require that the name be alpha only for simplicity and strict but basic validation
+      if user_name.match(/\A[a-zA-Z]*\z/).nil?
+        puts "Username must be characters only"
+        exit(1)
+      end
+
+      valid_instance_names = existing_instances(remove_app_prefix: false).join(', ')
+      if instance_name.nil? || instance_name.strip.chomp == '' || !valid_instance_names.include?(instance_name)
+        puts "Please specify the name of the instance to create, such as --instance=instance-name, which must be one of: #{valid_instance_names}"
         exit(1)
       end
 
@@ -212,8 +236,8 @@ module Seira
           GRANT SELECT ON ALL TABLES IN SCHEMA public TO #{user_name};
           ALTER DEFAULT PRIVILEGES IN SCHEMA "public" GRANT SELECT ON TABLES TO #{user_name};
         SQL
-      execute_db_command(admin_commands, as_admin: true)
-      execute_db_command(database_commands)
+      execute_db_command(admin_commands, instance_name: instance_name, as_admin: true)
+      execute_db_command(database_commands, instance_name: instance_name)
     end
 
     def execute_db_command(sql_command, as_admin: false)
@@ -236,9 +260,14 @@ module Seira
       exit 1 unless system("kubectl exec #{pod_name} --namespace #{app} -- #{psql_command} -c \"#{sql_command}\"")
     end
 
-    def existing_instances
-      # TODO: Update to to use gcloud method
-      `gcloud sql instances list --uri`.split("\n").map { |uri| uri.split('/').last }.select { |name| name.start_with? "#{app}-" }.map { |name| name.gsub(/^#{app}-/, '') }
+    def existing_instances(remove_app_prefix: true)
+      plain_list = `gcloud sql instances list --uri`.split("\n").map { |uri| uri.split('/').last }.select { |name| name.start_with? "#{app}-" }
+
+      if remove_app_prefix
+        plain_list.map { |name| name.gsub(/^#{app}-/, '') }
+      else
+        plain_list
+      end
     end
   end
 end
