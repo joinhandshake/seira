@@ -48,7 +48,7 @@ module Seira
 
       def run_create_command
         # The 'beta' is needed for HA and other beta features
-        create_command = "gcloud beta sql instances create #{name}"
+        create_command = "beta sql instances create #{name}"
 
         args.each do |arg|
           if arg.start_with? '--version='
@@ -97,10 +97,8 @@ module Seira
           create_command += " --async"
         end
 
-        puts "Running: #{create_command}"
-
         # Create the sql instance with the specified/default parameters
-        if system(create_command)
+        if gcloud(create_command, context: context, format: :boolean)
           async_additional =
             unless replica_for.nil?
               ". Database is still being created and may take some time to be available."
@@ -117,7 +115,7 @@ module Seira
         # Set the root user's password to something secure
         @root_password = SecureRandom.urlsafe_base64(32)
 
-        if system("gcloud sql users set-password postgres '' --instance=#{name} --password=#{root_password}")
+        if gcloud("sql users set-password postgres '' --instance=#{name} --password=#{root_password}", context: context, format: :boolean)
           puts "Set root password to #{root_password}"
         else
           puts "Failed to set root password"
@@ -129,7 +127,7 @@ module Seira
         # Create proxyuser with secure password
         @proxyuser_password = SecureRandom.urlsafe_base64(32)
 
-        if system("gcloud sql users create proxyuser '' --instance=#{name} --password=#{proxyuser_password}")
+        if gcloud("sql users create proxyuser '' --instance=#{name} --password=#{proxyuser_password}", context: context, format: :boolean)
           puts "Created proxyuser with password #{proxyuser_password}"
         else
           puts "Failed to create proxyuser"

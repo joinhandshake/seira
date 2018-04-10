@@ -58,7 +58,7 @@ module Seira
     # TODO: Info about what is running on it?
     # TODO: What information do we get in the json format we could include here?
     def run_list
-      puts `gcloud container node-pools list --cluster #{context[:cluster]}`
+      gcloud("container node-pools list --cluster #{context[:cluster]}", context: context, format: :boolean)
     end
 
     def run_list_nodes
@@ -91,7 +91,7 @@ module Seira
       end
 
       command =
-        "gcloud container node-pools create #{new_pool_name} \
+        "container node-pools create #{new_pool_name} \
         --cluster=#{context[:cluster]} \
         --disk-size=#{disk_size} \
         --image-type=#{image_type} \
@@ -99,7 +99,7 @@ module Seira
         --num-nodes=#{num_nodes} \
         --service-account=#{service_account}"
 
-      if system(command)
+      if gcloud(command, conext: context, format: :boolean)
         puts 'New pool created successfully'
       else
         puts 'Failed to create new pool'
@@ -157,7 +157,7 @@ module Seira
 
       exit(1) unless HighLine.agree "Node pool has successfully been cordoned and drained, and should be safe to delete. Continue deleting node pool #{node_pool_name}?"
 
-      if system("gcloud container node-pools delete #{node_pool_name} --cluster #{context[:cluster]}")
+      if gcloud("container node-pools delete #{node_pool_name} --cluster #{context[:cluster]}", context: context, format: :boolean)
         puts 'Node pool deleted successfully'
       else
         puts 'Failed to delete old pool'
@@ -167,7 +167,7 @@ module Seira
 
     # TODO: Represent by a ruby object?
     def node_pools
-      JSON.parse(`gcloud container node-pools list --cluster #{context[:cluster]} --format json`)
+      JSON.parse(gcloud("container node-pools list --cluster #{context[:cluster]}", context: context, format: :json))
     end
 
     def nodes_for_pool(pool_name)
