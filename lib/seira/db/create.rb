@@ -281,7 +281,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 300m
+              memory: 300Mi
         - image: gcr.io/cloudsql-docker/gce-proxy:1.11    # Gcloud SQL Proxy
           name: cloudsql-proxy
           command:
