@@ -26,7 +26,7 @@ module Seira
         link
       end
 
-      def get_secret(key:, context: )
+      def get_secret(key:, context:)
         Secrets.new(app: context[:app], action: 'get', args: [], context: context).get(key)
       end
     end
