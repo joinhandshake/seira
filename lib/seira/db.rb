@@ -47,7 +47,7 @@ module Seira
 
     # NOTE: Relies on the pgbouncer instance being named based on the db name, as is done in create command
     def primary_instance
-      database_url = Helpers.get_secret(app: app, key: 'DATABASE_URL')
+      database_url = Helpers.get_secret(context: context, key: 'DATABASE_URL')
       return nil unless database_url
 
       primary_uri = URI.parse(database_url)
@@ -105,7 +105,7 @@ module Seira
     def run_connect
       name = args[0] || primary_instance
       puts "Connecting to #{name}..."
-      root_password = Helpers.get_secret(app: app, key: "#{name.tr('-', '_').upcase}_ROOT_PASSWORD") || "Not found in secrets"
+      root_password = Helpers.get_secret(context: context, key: "#{name.tr('-', '_').upcase}_ROOT_PASSWORD") || "Not found in secrets"
       puts "Your root password for 'postgres' user is: #{root_password}"
       system("gcloud sql connect #{name}")
     end
@@ -239,7 +239,7 @@ module Seira
       # TODO(josh): move pgbouncer naming logic here and in Create to a common location
       instance_name = primary_instance
       tier = instance_name.gsub("#{app}-", '')
-      matching_pods = Helpers.fetch_pods(app: app, filters: { tier: tier })
+      matching_pods = Helpers.fetch_pods(context: context, filters: { tier: tier })
       if matching_pods.empty?
         puts 'Could not find pgbouncer pod to connect to'
         exit 1
@@ -247,7 +247,7 @@ module Seira
       pod_name = matching_pods.first['metadata']['name']
       psql_command =
         if as_admin
-          root_password = Helpers.get_secret(app: app, key: "#{instance_name.tr('-', '_').upcase}_ROOT_PASSWORD")
+          root_password = Helpers.get_secret(context: context, key: "#{instance_name.tr('-', '_').upcase}_ROOT_PASSWORD")
           "psql postgres://postgres:#{root_password}@127.0.0.1:5432"
         else
           'psql'

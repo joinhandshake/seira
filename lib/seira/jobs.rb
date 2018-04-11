@@ -112,7 +112,7 @@ module Seira
         File.open("#{destination}/#{file_name}", 'w') { |file| file.write(new_contents) }
 
         kubectl("apply -f #{destination}", context: context)
-        log_link = Helpers.log_link(context: context, app: app, query: unique_name)
+        log_link = Helpers.log_link(context: context, query: unique_name)
         puts "View logs at: #{log_link}" unless log_link.nil?
       end
 
