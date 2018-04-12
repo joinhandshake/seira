@@ -67,6 +67,7 @@ module Seira
 
         if arg == '--async'
           async = true
+          no_delete = true
         elsif arg == '--no-delete'
           no_delete = true
         else
@@ -74,11 +75,6 @@ module Seira
         end
 
         args.shift
-      end
-
-      if async && !no_delete
-        puts "Cannot delete Job after running if Job is async, since we don't know when it finishes."
-        exit(1)
       end
 
       # TODO: Configurable CPU and memory by args such as large, small, xlarge.
@@ -142,6 +138,9 @@ module Seira
           print "Job finished with status #{status}. Deleting Job from cluster for cleanup."
           kubectl("delete job #{unique_name}", context: context)
         end
+
+        # If the job did not succeed, exit nonzero so calling scripts know something went wrong
+        exit(1) unless status == "succeeded"
       end
     end
   end
