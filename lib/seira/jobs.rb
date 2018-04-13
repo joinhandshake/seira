@@ -84,7 +84,7 @@ module Seira
       replacement_hash = {
         'UNIQUE_NAME' => unique_name,
         'REVISION' => revision,
-        'COMMAND' => command.split(' ').map { |part| "\"#{part}\"" }.join(", "),
+        'COMMAND' => %("sh", "-c", "#{command}"),
         'CPU_REQUEST' => '200m',
         'CPU_LIMIT' => '500m',
         'MEMORY_REQUEST' => '500Mi',
