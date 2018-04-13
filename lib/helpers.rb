@@ -29,6 +29,12 @@ module Seira
       def get_secret(key:, context:)
         Secrets.new(app: context[:app], action: 'get', args: [], context: context).get(key)
       end
+
+      def shell_username
+        `whoami`
+      rescue
+        'unknown'
+      end
     end
   end
 end

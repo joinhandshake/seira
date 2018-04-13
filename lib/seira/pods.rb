@@ -105,7 +105,10 @@ module Seira
           kind: 'Pod',
           spec: spec,
           metadata: {
-            name: temp_name
+            name: temp_name,
+            annotations: {
+              owner: Helpers.shell_username
+            }
           }
         }
         # Don't restart the pod when it dies
