@@ -77,9 +77,16 @@ module Seira
     # Kube vanilla based upgrade
     def run_apply(restart: false)
       async = false
+      revision = nil
+      deployment = :all
+
       args.each do |arg|
         if arg == '--async'
           async = true
+        elsif arg.start_with? '--deployment='
+          deployment = arg.split('=')[1]
+        elsif revision.nil?
+          revision = arg
         else
           puts "Warning: unrecognized argument #{arg}"
         end
@@ -87,7 +94,7 @@ module Seira
 
       Dir.mktmpdir do |dir|
         destination = "#{dir}/#{context[:cluster]}/#{app}"
-        revision = args.first || ENV['REVISION']
+        revision ||= ENV['REVISION']
 
         if revision.nil?
           current_revision = ask_cluster_for_current_revision
@@ -116,12 +123,20 @@ module Seira
           replacement_hash: replacement_hash
         )
 
-        kubectl("apply -f #{destination}", context: context)
+        to_apply = destination
+        to_apply += "/#{deployment}.yaml" unless deployment == :all
+        kubectl("apply -f #{to_apply}", context: context)
 
         unless async
           puts "Monitoring rollout status..."
           # Wait for rollout of all deployments to complete (running `kubectl rollout status` in parallel via xargs)
-          exit 1 unless system("kubectl get deployments -n #{app} -o name | xargs -n1 -P10 kubectl rollout status -n #{app}")
+          rollout_wait_command =
+            if deployment == :all
+              "kubectl get deployments -n #{app} -o name | xargs -n1 -P10 kubectl rollout status -n #{app}"
+            else
+              "kubectl rollout status -n #{app} deployments/#{app}-#{deployment}"
+            end
+          exit 1 unless system(rollout_wait_command)
         end
       end
     end
