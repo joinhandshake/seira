@@ -63,110 +63,89 @@ module Seira
     end
 
     def run_connect
-      # If a pod name is specified, connect to that pod; otherwise pick a random web pod
-      target_pod_name = pod_name || Helpers.fetch_pods(context: context, filters: { tier: 'web' }).sample&.dig('metadata', 'name')
+      tier = nil
+      pod_name = nil
+      dedicated = false
+      command = 'sh'
 
-      if target_pod_name
-        connect_to_pod(target_pod_name)
-      else
-        puts "Could not find web pod to connect to"
-      end
-    end
-
-    def run_run
-      # Set defaults
-      tier = 'web'
-      clear_commands = false
-      detached = false
-      container_name = app
-
-      # Loop through args and process any that aren't just the command to run
-      loop do
-        arg = args.first
-        if arg.nil?
-          puts 'Please specify a command to run'
-          exit(1)
-        end
-        break unless arg.start_with? '--'
+      args.each do |arg|
         if arg.start_with? '--tier='
           tier = arg.split('=')[1]
-        elsif arg == '--clear-commands'
-          clear_commands = true
-        elsif arg == '--detached'
-          detached = true
-        elsif arg.start_with? '--container='
-          container_name = arg.split('=')[1]
+        elsif arg.start_with? '--pod='
+          pod_name = arg.split('=')[1]
+        elsif arg.start_with? '--command='
+          command = arg.split('=')[1..-1].join('=')
+        elsif arg == '--dedicated'
+          dedicated = true
         else
           puts "Warning: Unrecognized argument #{arg}"
         end
-        args.shift
       end
 
-      # Any remaining args are the command to run
-      command = args.join(' ')
-
-      # Find a 'template' pod from the proper tier
-      template_pod = Helpers.fetch_pods(context: context, filters: { tier: tier }).first
-      if template_pod.nil?
-        puts "Unable to find #{tier} tier pod to copy config from"
+      # If a pod name is specified, connect to that pod
+      # If a tier is specified, connect to a random pod from that tier
+      # Otherwise connect to a terminal pod
+      target_pod = pod_name || Helpers.fetch_pods(context: context, filters: { tier: tier || 'terminal' }).sample
+      if target_pod.nil?
+        puts 'Could not find pod to connect to'
         exit(1)
       end
 
-      # Use that template pod's configuration to create a new temporary pod
-      temp_name = "#{app}-temp-#{Random.unique_name}"
-      spec = template_pod['spec']
-      temp_pod = {
-        apiVersion: template_pod['apiVersion'],
-        kind: 'Pod',
-        spec: spec,
-        metadata: {
-          name: temp_name
-        }
-      }
-      spec['restartPolicy'] = 'Never'
-      if clear_commands
-        spec['containers'].each do |container|
-          container['command'] = ['bash', '-c', 'tail -f /dev/null']
-        end
-      end
+      if dedicated
+        # Create a dedicated temp pod to run in
+        # This is useful if you would like to have a persistent connection that doesn't get killed
+        # when someone updates the terminal deployment, or if you want to avoid noisy neighbors
+        # connected to the same pod.
+        temp_name = "temp-#{Random.unique_name}"
 
-      if detached
-        target_container = spec['containers'].find { |container| container['name'] == container_name }
-        if target_container.nil?
-          puts "Could not find container '#{container_name}' to run command in"
+        # Construct a spec for the temp pod
+        spec = target_pod['spec']
+        temp_pod = {
+          apiVersion: target_pod['apiVersion'],
+          kind: 'Pod',
+          spec: spec,
+          metadata: {
+            name: temp_name
+          }
+        }
+        # Don't restart the pod when it dies
+        spec['restartPolicy'] = 'Never'
+        # Overwrite container commands with something that times out, so if the client disconnects
+        # there's a limited amount of time that the temp pod is still taking up resources
+        # Note that this will break a pods which depends on containers running real commands, but
+        # for a simple terminal pod it's fine
+        spec['containers'].each do |container|
+          container['command'] = ['sleep', '86400'] # 86400 seconds = 24 hours
+        end
+
+        puts 'Creating dedicated pod...'
+        unless system("kubectl --namespace=#{app} create -f - <<JSON\n#{temp_pod.to_json}\nJSON")
+          puts 'Failed to create dedicated pod'
           exit(1)
         end
-        target_container['command'] = ['bash', '-c', command]
-      end
 
-      puts "Creating temporary pod #{temp_name}"
-      unless system("kubectl --namespace=#{app} create -f - <<JSON\n#{temp_pod.to_json}\nJSON")
-        puts 'Failed to create pod'
-        exit(1)
-      end
-
-      unless detached
-        # Check pod status until it's ready to connect to
-        print 'Waiting for pod to start...'
+        print 'Waiting for dedicated pod to start...'
         loop do
-          pod = JSON.parse(`kubectl --namespace=#{app} get pods/#{temp_name} -o json`)
+          pod = JSON.parse(kubectl("get pods/#{temp_name} -o json", context: context, return_output: true))
           break if pod['status']['phase'] == 'Running'
           print '.'
           sleep 1
         end
         print "\n"
 
-        # Connect to the pod, running the specified command
         connect_to_pod(temp_name, command)
 
-        # Clean up
-        unless system("kubectl --namespace=#{app} delete pod #{temp_name}")
-          puts "Warning: failed to clean up pod #{temp_name}"
+        # Clean up on disconnect so temp pod isn't taking up resources
+        unless kubectl("delete pods/#{temp_name}", context: context)
+          puts 'Failed to delete temp pod'
         end
+      else
+        # If we don't need a dedicated pod, it's way easier - just connect to the already running one
+        connect_to_pod(target_pod.dig('metadata', 'name'))
       end
     end
 
-    def connect_to_pod(name, command = 'bash')
+    def connect_to_pod(name, command = 'sh')
       puts "Connecting to #{name}..."
       system("kubectl exec -ti #{name} --namespace=#{app} -- #{command}")
     end
