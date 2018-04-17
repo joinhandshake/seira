@@ -197,24 +197,20 @@ module Seira
       puts "Copying source yaml from #{source} to temp folder"
       FileUtils.mkdir_p destination # Create the nested directory
       FileUtils.rm_rf("#{destination}/.", secure: true) # Clean out old files from the tmp folder
-      FileUtils.copy_entry source, destination
-      # Anything in jobs directory is not intended to be applied when deploying
-      # the app, but rather ran when needed as Job objects. Force to avoid exception if DNE.
-      FileUtils.rm_rf("#{destination}/jobs/") if File.directory?("#{destination}/jobs/")
 
       # Iterate through each yaml file and find/replace and save
       puts "Iterating temp folder files find/replace revision information"
-      Dir.foreach(destination) do |item|
+      Dir.foreach(source) do |item|
         next if item == '.' || item == '..'
 
         # If we have run into a directory item, skip it
-        next if File.directory?("#{destination}/#{item}")
+        next if File.directory?("#{source}/#{item}")
 
         # Skip any manifest file that has "seira-skip.yaml" at the end. Common use case is for Job definitions
         # to be used in "seira staging <app> jobs run"
         next if item.end_with?("seira-skip.yaml")
 
-        text = File.read("#{destination}/#{item}")
+        text = File.read("#{source}/#{item}")
 
         new_contents = text
         replacement_hash.each do |key, value|
