@@ -6,7 +6,7 @@ module Seira
   class Db
     include Seira::Commands
 
-    VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze create-readonly-user].freeze
+    VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze create-readonly-user psql table-sizes index-sizes vacuum unused-indexes unused-indices user-connections info].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -40,6 +40,20 @@ module Seira
         run_analyze
       when 'create-readonly-user'
         run_create_readonly_user
+      when 'psql'
+        run_psql
+      when 'table-sizes'
+        run_table_sizes
+      when 'index-sizes'
+        run_index_sizes
+      when 'vacuum'
+        run_vacuum
+      when 'unused-indexes', 'unused-indices'
+        run_unused_indexes
+      when 'user-connections'
+        run_user_connections
+      when 'info'
+        run_info
       else
         fail "Unknown command encountered"
       end
@@ -62,15 +76,24 @@ module Seira
     def run_help
       puts SUMMARY
       puts "\n"
-      puts "create: Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags."
-      puts "delete: Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first."
-      puts "list: List all postgres instances."
-      puts "restart: Fully restart the database."
-      puts "connect: Open a psql command prompt. You will be shown the password needed before the prompt opens."
-      puts "ps: List running queries"
-      puts "kill: Kill a query"
-      puts "analyze: Display database performance information"
-      puts "create-readonly-user: Create a database user named by --username=<name> with only SELECT access privileges"
+      puts <<~EOF
+      analyze:              Display database performance information
+      connect:              Open a psql command prompt via gcloud connect. You will be shown the password needed before the prompt opens.
+      create:               Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags.
+      create-readonly-user: Create a database user named by --username=<name> with only SELECT access privileges
+      delete:               Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first.
+      index-sizes:          List sizes of all indexes in the database
+      info:                 Summarize all database instances for the app
+      kill:                 Kill a query
+      list:                 List all postgres instances.
+      ps:                   List running queries
+      psql:                 Open a psql prompt via kubectl exec into a pgbouncer pod.
+      restart:              Fully restart the database.
+      table-sizes:          List sizes of all tables in the database
+      unused-indexes:       Show indexes with zero or low usage
+      user-connections:     List number of connections per user
+      vacuum:               Run a VACUUM ANALYZE
+      EOF
     end
 
     def run_create
@@ -235,7 +258,148 @@ module Seira
       execute_db_command(database_commands)
     end
 
-    def execute_db_command(sql_command, as_admin: false)
+    def run_psql
+      execute_db_command(nil, interactive: true)
+    end
+
+    def run_table_sizes
+      # https://wiki.postgresql.org/wiki/Disk_Usage
+      execute_db_command(
+        <<~SQL
+        SELECT table_name
+          , row_estimate
+          , pg_size_pretty(table_bytes) AS table
+          , pg_size_pretty(index_bytes) AS index
+          , pg_size_pretty(toast_bytes) AS toast
+          , pg_size_pretty(total_bytes) AS total
+        FROM (
+          SELECT *, total_bytes-index_bytes-COALESCE(toast_bytes,0) AS table_bytes FROM (
+            SELECT relname AS table_name
+                , c.reltuples AS row_estimate
+                , pg_total_relation_size(c.oid) AS total_bytes
+                , pg_indexes_size(c.oid) AS index_bytes
+                , pg_total_relation_size(reltoastrelid) AS toast_bytes
+              FROM pg_class c
+              LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE relkind = 'r'
+              AND n.nspname = 'public'
+          ) a
+        ) a
+        ORDER BY total_bytes DESC;
+        SQL
+      )
+    end
+
+    def run_index_sizes
+      # https://wiki.postgresql.org/wiki/Disk_Usage
+      execute_db_command(
+        <<~SQL
+        SELECT relname AS index
+          , c.reltuples AS row_estimate
+          , pg_size_pretty(pg_relation_size(c.oid)) AS "size"
+        FROM pg_class c
+        LEFT JOIN pg_namespace n ON (n.oid = c.relnamespace)
+        WHERE relkind = 'i'
+        AND n.nspname = 'public'
+        ORDER BY pg_relation_size(c.oid) DESC;
+        SQL
+      )
+    end
+
+    def run_vacuum
+      execute_db_command(
+        <<~SQL
+        VACUUM VERBOSE ANALYZE;
+        SQL
+      )
+    end
+
+    def run_unused_indexes
+      # https://github.com/heroku/heroku-pg-extras/blob/master/commands/unused_indexes.js
+      execute_db_command(
+        <<~SQL
+        SELECT
+          schemaname || '.' || relname AS table,
+          indexrelname AS index,
+          pg_size_pretty(pg_relation_size(i.indexrelid)) AS index_size,
+          idx_scan as index_scans
+        FROM pg_stat_user_indexes ui
+        JOIN pg_index i ON ui.indexrelid = i.indexrelid
+        WHERE NOT indisunique AND idx_scan < 50 AND pg_relation_size(relid) > 5 * 8192
+        ORDER BY pg_relation_size(i.indexrelid) / nullif(idx_scan, 0) DESC NULLS FIRST,
+        pg_relation_size(i.indexrelid) DESC;
+        SQL
+      )
+    end
+
+    def run_user_connections
+      execute_db_command(
+        <<~SQL
+        SELECT usename AS user, count(pid) FROM pg_stat_activity GROUP BY usename;
+        SQL
+      )
+    end
+
+    def run_info
+      instances = JSON.parse(gcloud("sql instances list --filter='name~\\A#{app}-'", context: context, format: :json))
+      instances.each do |instance|
+        db_info_command =
+          <<~SQL
+          COPY (SELECT pg_size_pretty(sum(pg_database_size(datname))) FROM pg_database) TO stdout;
+          COPY (SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE') TO stdout;
+          COPY (SELECT count(*) FROM pg_stat_activity) TO stdout;
+          SQL
+        db_info = execute_db_command(db_info_command, print: false)
+        data_size, table_count, connection_count = db_info.split("\n")
+        instance['data_size'] = data_size
+        instance['table_count'] = table_count
+        instance['connection_count'] = connection_count
+      end
+      instances.each do |instance|
+        # https://cloud.google.com/sql/faq
+        disk_size = instance['settings']['dataDiskSizeGb'].to_f
+        connection_limit =
+          if disk_size <= 0.6
+            25
+          elsif disk_size <= 3.75
+            50
+          elsif disk_size <= 6
+            100
+          elsif disk_size <= 7.5
+            150
+          elsif disk_size <= 15
+            200
+          elsif disk_size <= 30
+            250
+          elsif disk_size <= 60
+            300
+          elsif disk_size <= 120
+            400
+          else
+            500
+          end
+
+        backup_info = instance['settings']['backupConfiguration']['enabled'] == 'true' ? instance['settings']['backupConfiguration']['startTime'] : 'false'
+
+        puts "\n"
+        puts instance['name'].bold
+        puts <<~EOF
+        State:        #{instance['state']}
+        Tables:       #{instance['table_count']}
+        Disk Size:    #{disk_size} GB
+        Data Size:    #{instance['data_size']}
+        Auto Resize:  #{instance['settings']['storageAutoResize']}
+        Disk Type:    #{instance['settings']['dataDiskType']}
+        Tier:         #{instance['settings']['tier']}
+        Availability: #{instance['settings']['availabilityType']}
+        Version:      #{instance['databaseVersion']}
+        Backups:      #{backup_info}
+        Connections:  #{instance['connection_count']}/#{connection_limit}(?)
+        EOF
+      end
+    end
+
+    def execute_db_command(sql_command, as_admin: false, interactive: false, print: true)
       # TODO(josh): move pgbouncer naming logic here and in Create to a common location
       instance_name = primary_instance
       tier = instance_name.gsub("#{app}-", '')
@@ -252,7 +416,19 @@ module Seira
         else
           'psql'
         end
-      exit 1 unless system("kubectl exec #{pod_name} --namespace #{app} -- #{psql_command} -c \"#{sql_command}\"")
+      system_command = "kubectl exec #{pod_name} --namespace #{app}"
+      system_command += ' -ti' if interactive
+      system_command += " -- #{psql_command}"
+      system_command += " -c \"#{sql_command}\"" unless sql_command.nil?
+      if interactive
+        exit(1) unless system(system_command)
+      else
+        output = `#{system_command}`
+        success = $?.success?
+        puts output if print || !success
+        exit(1) unless success
+        output
+      end
     end
 
     def existing_instances(remove_app_prefix: true)
