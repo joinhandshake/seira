@@ -1,4 +1,5 @@
 require 'securerandom'
+require 'English'
 
 require_relative 'db/create'
 
@@ -76,24 +77,24 @@ module Seira
     def run_help
       puts SUMMARY
       puts "\n"
-      puts <<~EOF
-      analyze:              Display database performance information
-      connect:              Open a psql command prompt via gcloud connect. You will be shown the password needed before the prompt opens.
-      create:               Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags.
-      create-readonly-user: Create a database user named by --username=<name> with only SELECT access privileges
-      delete:               Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first.
-      index-sizes:          List sizes of all indexes in the database
-      info:                 Summarize all database instances for the app
-      kill:                 Kill a query
-      list:                 List all postgres instances.
-      ps:                   List running queries
-      psql:                 Open a psql prompt via kubectl exec into a pgbouncer pod.
-      restart:              Fully restart the database.
-      table-sizes:          List sizes of all tables in the database
-      unused-indexes:       Show indexes with zero or low usage
-      user-connections:     List number of connections per user
-      vacuum:               Run a VACUUM ANALYZE
-      EOF
+      puts <<~HELPTEXT
+             analyze:              Display database performance information
+             connect:              Open a psql command prompt via gcloud connect. You will be shown the password needed before the prompt opens.
+             create:               Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags.
+             create-readonly-user: Create a database user named by --username=<name> with only SELECT access privileges
+             delete:               Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first.
+             index-sizes:          List sizes of all indexes in the database
+             info:                 Summarize all database instances for the app
+             kill:                 Kill a query
+             list:                 List all postgres instances.
+             ps:                   List running queries
+             psql:                 Open a psql prompt via kubectl exec into a pgbouncer pod.
+             restart:              Fully restart the database.
+             table-sizes:          List sizes of all tables in the database
+             unused-indexes:       Show indexes with zero or low usage
+             user-connections:     List number of connections per user
+             vacuum:               Run a VACUUM ANALYZE
+           HELPTEXT
     end
 
     def run_create
@@ -143,21 +144,22 @@ module Seira
         end
       end
 
-      execute_db_command(<<~SQL
-        SELECT
-          pid,
-          state,
-          application_name AS source,
-          age(now(),query_start) AS running_for,
-          query_start,
-          wait_event IS NOT NULL AS waiting,
-          query
-        FROM pg_stat_activity
-        WHERE
-          query <> '<insufficient privilege>'
-          #{verbose ? '' : "AND state <> 'idle'"}
-          AND pid <> pg_backend_pid()
-        ORDER BY query_start DESC
+      execute_db_command(
+        <<~SQL
+          SELECT
+            pid,
+            state,
+            application_name AS source,
+            age(now(),query_start) AS running_for,
+            query_start,
+            wait_event IS NOT NULL AS waiting,
+            query
+          FROM pg_stat_activity
+          WHERE
+            query <> '<insufficient privilege>'
+            #{verbose ? '' : "AND state <> 'idle'"}
+            AND pid <> pg_backend_pid()
+          ORDER BY query_start DESC
         SQL
       )
     end
@@ -266,26 +268,26 @@ module Seira
       # https://wiki.postgresql.org/wiki/Disk_Usage
       execute_db_command(
         <<~SQL
-        SELECT table_name
-          , row_estimate
-          , pg_size_pretty(table_bytes) AS table
-          , pg_size_pretty(index_bytes) AS index
-          , pg_size_pretty(toast_bytes) AS toast
-          , pg_size_pretty(total_bytes) AS total
-        FROM (
-          SELECT *, total_bytes-index_bytes-COALESCE(toast_bytes,0) AS table_bytes FROM (
-            SELECT relname AS table_name
-                , c.reltuples AS row_estimate
-                , pg_total_relation_size(c.oid) AS total_bytes
-                , pg_indexes_size(c.oid) AS index_bytes
-                , pg_total_relation_size(reltoastrelid) AS toast_bytes
-              FROM pg_class c
-              LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
-              WHERE relkind = 'r'
-              AND n.nspname = 'public'
+          SELECT table_name
+            , row_estimate
+            , pg_size_pretty(table_bytes) AS table
+            , pg_size_pretty(index_bytes) AS index
+            , pg_size_pretty(toast_bytes) AS toast
+            , pg_size_pretty(total_bytes) AS total
+          FROM (
+            SELECT *, total_bytes-index_bytes-COALESCE(toast_bytes,0) AS table_bytes FROM (
+              SELECT relname AS table_name
+                  , c.reltuples AS row_estimate
+                  , pg_total_relation_size(c.oid) AS total_bytes
+                  , pg_indexes_size(c.oid) AS index_bytes
+                  , pg_total_relation_size(reltoastrelid) AS toast_bytes
+                FROM pg_class c
+                LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE relkind = 'r'
+                AND n.nspname = 'public'
+            ) a
           ) a
-        ) a
-        ORDER BY total_bytes DESC;
+          ORDER BY total_bytes DESC;
         SQL
       )
     end
@@ -294,14 +296,14 @@ module Seira
       # https://wiki.postgresql.org/wiki/Disk_Usage
       execute_db_command(
         <<~SQL
-        SELECT relname AS index
-          , c.reltuples AS row_estimate
-          , pg_size_pretty(pg_relation_size(c.oid)) AS "size"
-        FROM pg_class c
-        LEFT JOIN pg_namespace n ON (n.oid = c.relnamespace)
-        WHERE relkind = 'i'
-        AND n.nspname = 'public'
-        ORDER BY pg_relation_size(c.oid) DESC;
+          SELECT relname AS index
+            , c.reltuples AS row_estimate
+            , pg_size_pretty(pg_relation_size(c.oid)) AS "size"
+          FROM pg_class c
+          LEFT JOIN pg_namespace n ON (n.oid = c.relnamespace)
+          WHERE relkind = 'i'
+          AND n.nspname = 'public'
+          ORDER BY pg_relation_size(c.oid) DESC;
         SQL
       )
     end
@@ -309,7 +311,7 @@ module Seira
     def run_vacuum
       execute_db_command(
         <<~SQL
-        VACUUM VERBOSE ANALYZE;
+          VACUUM VERBOSE ANALYZE;
         SQL
       )
     end
@@ -318,16 +320,16 @@ module Seira
       # https://github.com/heroku/heroku-pg-extras/blob/master/commands/unused_indexes.js
       execute_db_command(
         <<~SQL
-        SELECT
-          schemaname || '.' || relname AS table,
-          indexrelname AS index,
-          pg_size_pretty(pg_relation_size(i.indexrelid)) AS index_size,
-          idx_scan as index_scans
-        FROM pg_stat_user_indexes ui
-        JOIN pg_index i ON ui.indexrelid = i.indexrelid
-        WHERE NOT indisunique AND idx_scan < 50 AND pg_relation_size(relid) > 5 * 8192
-        ORDER BY pg_relation_size(i.indexrelid) / nullif(idx_scan, 0) DESC NULLS FIRST,
-        pg_relation_size(i.indexrelid) DESC;
+          SELECT
+            schemaname || '.' || relname AS table,
+            indexrelname AS index,
+            pg_size_pretty(pg_relation_size(i.indexrelid)) AS index_size,
+            idx_scan as index_scans
+          FROM pg_stat_user_indexes ui
+          JOIN pg_index i ON ui.indexrelid = i.indexrelid
+          WHERE NOT indisunique AND idx_scan < 50 AND pg_relation_size(relid) > 5 * 8192
+          ORDER BY pg_relation_size(i.indexrelid) / nullif(idx_scan, 0) DESC NULLS FIRST,
+          pg_relation_size(i.indexrelid) DESC;
         SQL
       )
     end
@@ -335,7 +337,7 @@ module Seira
     def run_user_connections
       execute_db_command(
         <<~SQL
-        SELECT usename AS user, count(pid) FROM pg_stat_activity GROUP BY usename;
+          SELECT usename AS user, count(pid) FROM pg_stat_activity GROUP BY usename;
         SQL
       )
     end
@@ -345,9 +347,9 @@ module Seira
       instances.each do |instance|
         db_info_command =
           <<~SQL
-          COPY (SELECT pg_size_pretty(sum(pg_database_size(datname))) FROM pg_database) TO stdout;
-          COPY (SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE') TO stdout;
-          COPY (SELECT count(*) FROM pg_stat_activity) TO stdout;
+            COPY (SELECT pg_size_pretty(sum(pg_database_size(datname))) FROM pg_database) TO stdout;
+            COPY (SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE') TO stdout;
+            COPY (SELECT count(*) FROM pg_stat_activity) TO stdout;
           SQL
         db_info = execute_db_command(db_info_command, print: false)
         data_size, table_count, connection_count = db_info.split("\n")
@@ -383,19 +385,19 @@ module Seira
 
         puts "\n"
         puts instance['name'].bold
-        puts <<~EOF
-        State:        #{instance['state']}
-        Tables:       #{instance['table_count']}
-        Disk Size:    #{disk_size} GB
-        Data Size:    #{instance['data_size']}
-        Auto Resize:  #{instance['settings']['storageAutoResize']}
-        Disk Type:    #{instance['settings']['dataDiskType']}
-        Tier:         #{instance['settings']['tier']}
-        Availability: #{instance['settings']['availabilityType']}
-        Version:      #{instance['databaseVersion']}
-        Backups:      #{backup_info}
-        Connections:  #{instance['connection_count']}/#{connection_limit}(?)
-        EOF
+        puts <<~INFOTEXT
+               State:        #{instance['state']}
+               Tables:       #{instance['table_count']}
+               Disk Size:    #{disk_size} GB
+               Data Size:    #{instance['data_size']}
+               Auto Resize:  #{instance['settings']['storageAutoResize']}
+               Disk Type:    #{instance['settings']['dataDiskType']}
+               Tier:         #{instance['settings']['tier']}
+               Availability: #{instance['settings']['availabilityType']}
+               Version:      #{instance['databaseVersion']}
+               Backups:      #{backup_info}
+               Connections:  #{instance['connection_count']}/#{connection_limit}(?)
+             INFOTEXT
       end
     end
 
@@ -424,7 +426,7 @@ module Seira
         exit(1) unless system(system_command)
       else
         output = `#{system_command}`
-        success = $?.success?
+        success = $CHILD_STATUS.success?
         puts output if print || !success
         exit(1) unless success
         output
