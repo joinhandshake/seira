@@ -78,23 +78,23 @@ module Seira
       puts SUMMARY
       puts "\n"
       puts <<~HELPTEXT
-             analyze:              Display database performance information
-             connect:              Open a psql command prompt via gcloud connect. You will be shown the password needed before the prompt opens.
-             create:               Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags.
-             create-readonly-user: Create a database user named by --username=<name> with only SELECT access privileges
-             delete:               Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first.
-             index-sizes:          List sizes of all indexes in the database
-             info:                 Summarize all database instances for the app
-             kill:                 Kill a query
-             list:                 List all postgres instances.
-             ps:                   List running queries
-             psql:                 Open a psql prompt via kubectl exec into a pgbouncer pod.
-             restart:              Fully restart the database.
-             table-sizes:          List sizes of all tables in the database
-             unused-indexes:       Show indexes with zero or low usage
-             user-connections:     List number of connections per user
-             vacuum:               Run a VACUUM ANALYZE
-           HELPTEXT
+        analyze:              Display database performance information
+        connect:              Open a psql command prompt via gcloud connect. You will be shown the password needed before the prompt opens.
+        create:               Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags.
+        create-readonly-user: Create a database user named by --username=<name> with only SELECT access privileges
+        delete:               Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first.
+        index-sizes:          List sizes of all indexes in the database
+        info:                 Summarize all database instances for the app
+        kill:                 Kill a query
+        list:                 List all postgres instances.
+        ps:                   List running queries
+        psql:                 Open a psql prompt via kubectl exec into a pgbouncer pod.
+        restart:              Fully restart the database.
+        table-sizes:          List sizes of all tables in the database
+        unused-indexes:       Show indexes with zero or low usage
+        user-connections:     List number of connections per user
+        vacuum:               Run a VACUUM ANALYZE
+      HELPTEXT
     end
 
     def run_create
@@ -386,18 +386,18 @@ module Seira
         puts "\n"
         puts instance['name'].bold
         puts <<~INFOTEXT
-               State:        #{instance['state']}
-               Tables:       #{instance['table_count']}
-               Disk Size:    #{disk_size} GB
-               Data Size:    #{instance['data_size']}
-               Auto Resize:  #{instance['settings']['storageAutoResize']}
-               Disk Type:    #{instance['settings']['dataDiskType']}
-               Tier:         #{instance['settings']['tier']}
-               Availability: #{instance['settings']['availabilityType']}
-               Version:      #{instance['databaseVersion']}
-               Backups:      #{backup_info}
-               Connections:  #{instance['connection_count']}/#{connection_limit}(?)
-             INFOTEXT
+          State:        #{instance['state']}
+          Tables:       #{instance['table_count']}
+          Disk Size:    #{disk_size} GB
+          Data Size:    #{instance['data_size']}
+          Auto Resize:  #{instance['settings']['storageAutoResize']}
+          Disk Type:    #{instance['settings']['dataDiskType']}
+          Tier:         #{instance['settings']['tier']}
+          Availability: #{instance['settings']['availabilityType']}
+          Version:      #{instance['databaseVersion']}
+          Backups:      #{backup_info}
+          Connections:  #{instance['connection_count']}/#{connection_limit}(?)
+        INFOTEXT
       end
     end
 
