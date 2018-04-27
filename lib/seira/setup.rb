@@ -103,7 +103,9 @@ module Seira
       end
 
       puts "Making sure kubernetes-helm is installed..."
-      unless system('helm version &> /dev/null')
+      # Only ask for client version since server config may not yet be configured,
+      # and in some versions of Helm it hanged.
+      unless system('helm version --client &> /dev/null')
         puts "Installing helm..."
         system('brew install kubernetes-helm')
       end
