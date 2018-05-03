@@ -22,7 +22,7 @@ module Seira
         run_status
         exit(0)
       elsif target == 'all'
-        puts "We will now set up gcloud and kubectl for each project. We use a distinct GCP Project for each environment, which are specified in .seira.yml."
+        puts "We will now set up gcloud and kubectl for each project. Each cluster is specified in .seira.yml."
         settings.valid_cluster_names.each do |cluster|
           setup_cluster(cluster)
         end
