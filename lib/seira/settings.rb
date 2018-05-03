@@ -49,7 +49,7 @@ module Seira
 
       # Try iterating through each cluster to find the relevant alias
       clusters.each do |cluster_name, cluster_metadata|
-        next if cluster_metadata['aliases'].empty?
+        next if cluster_metadata['aliases'].nil? || cluster_metadata['aliases'].empty?
         return cluster_name if cluster_metadata['aliases'].include?(shorthand)
       end
 

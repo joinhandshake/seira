@@ -34,8 +34,8 @@ module Seira
 
     def switch(target_cluster:, verbose: false)
       unless target_cluster && target_cluster != "" && settings.valid_cluster_names.include?(target_cluster)
-        puts "Please specify environment as first param to any seira command"
-        puts "Environment should be one of #{settings.valid_cluster_names}"
+        puts "Please specify cluster as first param to any seira command"
+        puts "Cluster should be one of #{settings.valid_cluster_names}"
         exit(1)
       end
 
