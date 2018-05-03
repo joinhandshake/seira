@@ -22,7 +22,7 @@ module Seira
         run_status
         exit(0)
       elsif target == 'all'
-        puts "We will now set up gcloud and kubectl for each project. We use a distinct GCP Project for each environment, which are specified in .seira.yml."
+        puts "We will now set up gcloud and kubectl for each project. Each cluster is specified in .seira.yml."
         settings.valid_cluster_names.each do |cluster|
           setup_cluster(cluster)
         end
@@ -103,7 +103,9 @@ module Seira
       end
 
       puts "Making sure kubernetes-helm is installed..."
-      unless system('helm version &> /dev/null')
+      # Only ask for client version since server config may not yet be configured,
+      # and in some versions of Helm it hanged.
+      unless system('helm version --client &> /dev/null')
         puts "Installing helm..."
         system('brew install kubernetes-helm')
       end

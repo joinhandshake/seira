@@ -87,8 +87,11 @@ module Seira
           @settings.full_cluster_name_for_shorthand(cluster)
         end
 
-      unless category == 'setup'
-        @project = @settings.project_for_cluster(@cluster)
+      # If cluster is nil, we'll show an error message later on.
+      unless @cluster.nil?
+        unless category == 'setup'
+          @project = @settings.project_for_cluster(@cluster)
+        end
       end
     end
 
@@ -161,7 +164,7 @@ module Seira
     end
 
     def simple_cluster_change?
-      app.nil? && category.nil? # Special case where user is simply changing environments
+      app.nil? && category.nil? # Special case where user is simply changing clusters
     end
 
     def run_base_help
