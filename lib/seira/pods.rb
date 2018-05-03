@@ -144,7 +144,7 @@ module Seira
         end
       else
         # If we don't need a dedicated pod, it's way easier - just connect to the already running one
-        connect_to_pod(target_pod.dig('metadata', 'name'))
+        connect_to_pod(target_pod.dig('metadata', 'name'), command)
       end
     end
 
