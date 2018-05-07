@@ -15,7 +15,7 @@ module Seira
       # https://ruby-doc.org/core-2.2.0/Binding.html
       def render
         result = ERB.new(@template).result(binding)
-        
+
         puts "Rendered with following ERB variables:"
         @summary.each do |key, value|
           puts "#{key}: #{value}"
