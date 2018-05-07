@@ -27,6 +27,12 @@ module Seira
       def current_replica_count(deployment)
         count = Seira::Helpers.get_current_replicas(deployment: deployment, context: @context)
         @summary["#{deployment}-replicas"] = count
+
+        # Validate a sane count so that we don't accidentally deploy 0 replicas
+        unless count && count.is_a?(Integer) && count > 0 && count < 9999
+          fail "Received invalid value for replica count for Deployment #{deployment} '#{count}'"
+        end
+
         count
       end
 
