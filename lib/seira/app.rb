@@ -214,11 +214,8 @@ module Seira
 
         # First run it through ERB if it should be
         if item.end_with?('.erb')
-          renderer = Seira::Util::ResourceRenderer.new(template: text, locals: {})
+          renderer = Seira::Util::ResourceRenderer.new(template: text, context: context, locals: {})
           text = renderer.render
-          puts '--- ERB Found ----'
-          puts text
-          puts '------'
         end
 
         # Then run through old basic find/replace tempalating.
