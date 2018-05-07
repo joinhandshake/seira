@@ -30,6 +30,11 @@ module Seira
         Secrets.new(app: context[:app], action: 'get', args: [], context: context).get(key)
       end
 
+      def get_current_replicas(deployment:, context:)
+        output = Seira::Commands.kubectl("get deployment #{deployment} -o json", context: context, return_output: true)
+        JSON.parse(output)['spec']['replicas']
+      end
+
       def shell_username
         `whoami`
       rescue

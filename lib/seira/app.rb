@@ -206,12 +206,21 @@ module Seira
         # If we have run into a directory item, skip it
         next if File.directory?("#{source}/#{item}")
 
-        # Skip any manifest file that has "seira-skip.yaml" at the end. Common use case is for Job definitions
+        # Skip any manifest file that has "seira-skip.yaml" in the file name (ERB or not). Common use case is for Job definitions
         # to be used in "seira staging <app> jobs run"
-        next if item.end_with?("seira-skip.yaml")
+        next if item.include?("seira-skip.yaml")
 
         text = File.read("#{source}/#{item}")
 
+        # First run it through ERB if it should be
+        if item.end_with?('.erb')
+          locals = {}.merge(replacement_hash)
+          renderer = Seira::Util::ResourceRenderer.new(template: text, context: context, locals: locals)
+          text = renderer.render
+        end
+
+        # Then run through old basic find/replace tempalating.
+        # TODO: Do deprecation process for old home-made templating
         new_contents = text
         replacement_hash.each do |key, value|
           new_contents.gsub!(key, value)
