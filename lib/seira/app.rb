@@ -125,19 +125,19 @@ module Seira
 
         to_apply = destination
         to_apply += "/#{deployment}.yaml" unless deployment == :all
-        kubectl("apply -f #{to_apply}", context: context)
+        # kubectl("apply -f #{to_apply}", context: context)
 
-        unless async
-          puts "Monitoring rollout status..."
-          # Wait for rollout of all deployments to complete (running `kubectl rollout status` in parallel via xargs)
-          rollout_wait_command =
-            if deployment == :all
-              "kubectl get deployments -n #{app} -o name | xargs -n1 -P10 kubectl rollout status -n #{app}"
-            else
-              "kubectl rollout status -n #{app} deployments/#{app}-#{deployment}"
-            end
-          exit 1 unless system(rollout_wait_command)
-        end
+        # unless async
+        #   puts "Monitoring rollout status..."
+        #   # Wait for rollout of all deployments to complete (running `kubectl rollout status` in parallel via xargs)
+        #   rollout_wait_command =
+        #     if deployment == :all
+        #       "kubectl get deployments -n #{app} -o name | xargs -n1 -P10 kubectl rollout status -n #{app}"
+        #     else
+        #       "kubectl rollout status -n #{app} deployments/#{app}-#{deployment}"
+        #     end
+        #   exit 1 unless system(rollout_wait_command)
+        # end
       end
     end
 
@@ -206,12 +206,23 @@ module Seira
         # If we have run into a directory item, skip it
         next if File.directory?("#{source}/#{item}")
 
-        # Skip any manifest file that has "seira-skip.yaml" at the end. Common use case is for Job definitions
+        # Skip any manifest file that has "seira-skip.yaml" in the file name (ERB or not). Common use case is for Job definitions
         # to be used in "seira staging <app> jobs run"
-        next if item.end_with?("seira-skip.yaml")
+        next if item.include?("seira-skip.yaml")
 
         text = File.read("#{source}/#{item}")
 
+        # First run it through ERB if it should be
+        if item.end_with?('.erb')
+          renderer = Seira::Util::ResourceRenderer.new(template: text, locals: {})
+          text = renderer.render
+          puts '--- ERB Found ----'
+          puts text
+          puts '------'
+        end
+
+        # Then run through old basic find/replace tempalating.
+        # TODO: Replace this fully with ERB
         new_contents = text
         replacement_hash.each do |key, value|
           new_contents.gsub!(key, value)
