@@ -226,8 +226,10 @@ module Seira
           new_contents.gsub!(key, value)
         end
 
+        target_name = item.gsub('.erb', '')
+
         # To write changes to the file, use:
-        File.open("#{destination}/#{item}", 'w') { |file| file.write(new_contents) }
+        File.open("#{destination}/#{target_name}", 'w') { |file| file.write(new_contents) }
       end
     end
 
