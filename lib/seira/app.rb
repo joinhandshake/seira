@@ -125,19 +125,19 @@ module Seira
 
         to_apply = destination
         to_apply += "/#{deployment}.yaml" unless deployment == :all
-        # kubectl("apply -f #{to_apply}", context: context)
+        kubectl("apply -f #{to_apply}", context: context)
 
-        # unless async
-        #   puts "Monitoring rollout status..."
-        #   # Wait for rollout of all deployments to complete (running `kubectl rollout status` in parallel via xargs)
-        #   rollout_wait_command =
-        #     if deployment == :all
-        #       "kubectl get deployments -n #{app} -o name | xargs -n1 -P10 kubectl rollout status -n #{app}"
-        #     else
-        #       "kubectl rollout status -n #{app} deployments/#{app}-#{deployment}"
-        #     end
-        #   exit 1 unless system(rollout_wait_command)
-        # end
+        unless async
+          puts "Monitoring rollout status..."
+          # Wait for rollout of all deployments to complete (running `kubectl rollout status` in parallel via xargs)
+          rollout_wait_command =
+            if deployment == :all
+              "kubectl get deployments -n #{app} -o name | xargs -n1 -P10 kubectl rollout status -n #{app}"
+            else
+              "kubectl rollout status -n #{app} deployments/#{app}-#{deployment}"
+            end
+          exit 1 unless system(rollout_wait_command)
+        end
       end
     end
 
@@ -214,7 +214,8 @@ module Seira
 
         # First run it through ERB if it should be
         if item.end_with?('.erb')
-          renderer = Seira::Util::ResourceRenderer.new(template: text, context: context, locals: {})
+          locals = {}.merge(replacement_hash)
+          renderer = Seira::Util::ResourceRenderer.new(template: text, context: context, locals: locals)
           text = renderer.render
         end
 

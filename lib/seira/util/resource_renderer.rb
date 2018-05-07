@@ -29,6 +29,14 @@ module Seira
         @summary["#{deployment}-replicas"] = count
         count
       end
+
+      def target_revision
+        @locals['REVISION']
+      end
+
+      def restarted_at_value
+        @locals['RESTARTED_AT_VALUE']
+      end
     end
   end
 end
