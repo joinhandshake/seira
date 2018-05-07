@@ -220,7 +220,7 @@ module Seira
         end
 
         # Then run through old basic find/replace tempalating.
-        # TODO: Replace this fully with ERB
+        # TODO: Do deprecation process for old home-made templating
         new_contents = text
         replacement_hash.each do |key, value|
           new_contents.gsub!(key, value)
