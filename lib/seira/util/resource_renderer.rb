@@ -38,11 +38,15 @@ module Seira
       end
 
       def target_revision
-        @locals['REVISION']
+        rv = @locals['REVISION']
+        @summary["revision"] = rv
+        rv
       end
 
       def restarted_at_value
-        @locals['RESTARTED_AT_VALUE']
+        rv = @locals['RESTARTED_AT_VALUE']
+        @summary["restarted_at_value"] = rv
+        rv
       end
       # END ERB templating methods and variables
     end
