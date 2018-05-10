@@ -77,7 +77,7 @@ module Seira
       end
 
       system("gcloud config set project #{cluster_metadata['project']}")
-      system("gcloud config set compute/zone #{settings.default_zone}")
+      system("gcloud config set compute/zone #{cluster_metadata['zone'] || settings.default_zone}")
       puts "Your new gcloud setup for #{cluster_name}:"
       system("gcloud config configurations describe #{cluster_name}")
 
