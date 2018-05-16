@@ -37,6 +37,18 @@ module Seira
         count
       end
 
+      def get_secret(secret_name)
+        secret_value = Seira::Helpers.get_secret(key: secret_name, context: @context)
+        @summary[secret_name] = 'fetched'
+
+        # Validate we actually get something back
+        unless secret_value
+          fail "Missing value for secret #{secret_name}"
+        end
+
+        secret_value
+      end
+
       def target_revision
         rv = @locals['REVISION']
         @summary["revision"] = rv
