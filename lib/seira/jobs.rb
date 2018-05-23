@@ -75,6 +75,7 @@ module Seira
       async = false # Wait for job to finish before continuing.
       no_delete = false # Delete at end
       resource_hash = RESOURCE_SIZES['1']
+     
       # Loop through args and process any that aren't just the command to run
       loop do
         arg = args.first
