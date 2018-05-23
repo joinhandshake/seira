@@ -7,7 +7,7 @@ module Seira
 
     attr_reader :config_path
 
-    def initialize(config_path: ENV["SEIRA_CONFIG_PATH"] || DEFAULT_CONFIG_PATH)
+    def initialize(config_path: DEFAULT_CONFIG_PATH)
       @config_path = config_path
     end
 
