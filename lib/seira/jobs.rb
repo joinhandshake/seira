@@ -74,7 +74,7 @@ module Seira
       # Set defaults
       async = false # Wait for job to finish before continuing.
       no_delete = false # Delete at end
-
+      resource_hash = RESOURCE_SIZES['1']
       # Loop through args and process any that aren't just the command to run
       loop do
         arg = args.first
@@ -103,7 +103,6 @@ module Seira
       command = args.join(' ')
       unique_name = "#{app}-run-#{Random.unique_name}"
       revision = gcp_app.ask_cluster_for_current_revision # TODO: Make more reliable, especially with no web tier
-      resource_hash ||= RESOURCE_SIZES['1']
       replacement_hash = {
         'UNIQUE_NAME' => unique_name,
         'REVISION' => revision,
