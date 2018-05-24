@@ -85,7 +85,12 @@ module Seira
       # If a pod name is specified, connect to that pod
       # If a tier is specified, connect to a random pod from that tier
       # Otherwise connect to a terminal pod
-      target_pod = pod_name || Helpers.fetch_pods(context: context, filters: { tier: tier || 'terminal' }).sample
+      target_pod =
+        if !pod_name&.empty?
+          Helpers.fetch_pod(pod_name, context: context)
+        else
+          Helpers.fetch_pods(context: context, filters: { tier: tier || 'terminal' }).sample
+        end
       if target_pod.nil?
         puts 'Could not find pod to connect to'
         exit(1)
