@@ -4,7 +4,7 @@ module Seira
   class Pods
     include Seira::Commands
 
-    VALID_ACTIONS = %w[help list delete logs top run connect].freeze
+    VALID_ACTIONS = %w[help list delete logs top run connect cp].freeze
     SUMMARY = "Manage your application's pods.".freeze
 
     attr_reader :app, :action, :args, :pod_name, :context
@@ -33,6 +33,8 @@ module Seira
         run_connect
       when 'run'
         run_run
+      when 'cp'
+        run_cp
       else
         fail "Unknown command encountered"
       end
@@ -60,6 +62,43 @@ module Seira
 
     def run_top
       kubectl("top pod #{pod_name} --containers", context: context)
+    end
+
+    def run_cp
+      tier = nil
+      pod_name = nil
+      file_spec_src = ''
+      file_spec_dest = ''
+
+      args.each do |arg|
+        if arg.start_with? '--tier='
+          tier = arg.split('=')[1]
+        elsif arg.start_with? '--pod='
+          pod_name = arg.split('=')[1]
+        elsif arg.start_with? '--src='
+          file_spec_src = arg.split('=')[1]
+        elsif arg.start_with? '--dest='
+          file_spec_dest = arg.split('=')[1]
+        else
+          puts "Warning: Unrecognized argument #{arg}"
+        end
+      end
+
+      fail 'Must specify both --src and --dest directories' if file_spec_src.empty? || file_spec_dest.empty?
+
+      # If a pod name is specified, connect to that pod
+      # If a tier is specified, connect to a random pod from that tier
+      # Otherwise connect to a terminal pod
+      target_pod = pod_name || Helpers.fetch_pods(context: context, filters: { tier: tier || 'terminal' }).sample
+      if target_pod.nil?
+        puts 'Could not find pod to connect to'
+        exit(1)
+      end
+
+      target_pod_name = target_pod.dig('metadata', 'name')
+
+      puts "Copying to pod: #{target_pod_name}"
+      kubectl("cp #{file_spec_src} #{target_pod_name}:#{file_spec_dest}", context: context)
     end
 
     def run_connect
