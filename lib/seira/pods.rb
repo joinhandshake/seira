@@ -66,7 +66,6 @@ module Seira
       tier = nil
       pod_name = nil
       dedicated = false
-      existing_pod = nil
       command = 'sh'
 
       args.each do |arg|
@@ -86,78 +85,81 @@ module Seira
       # If a pod name is specified, find the pod with that name
       existing_pod = Helpers.fetch_pod(pod_name, context: context) unless pod_name.to_s.empty?
 
-      # If existing_pod exists, make sure we're not attempting to create a dedicated pod
-      # Use the existing pod if we specified a name
+      # Use existing pod if found and not --dedicated
       # Otherwise, connect to a random pod from the specified tier or the 'terminal' tier if unspecified
-      target_pod =
-        if existing_pod && dedicated
-          puts <<~POD_NAME_ERROR
-            Cannot create new dedicated pod with name: #{pod_name}
-            A pod with this name already exists
-          POD_NAME_ERROR
-          exit(1)
-        elsif existing_pod || pod_name.to_s.empty?
-          existing_pod || Helpers.fetch_pods(context: context, filters: { tier: tier || 'terminal' }).sample
-        end
-      if target_pod.nil?
-        puts 'Could not find pod to connect to'
-        exit(1)
-      end
+      target_pod = if existing_pod && dedicated
+                     puts "Cannot create new dedicated pod with name: #{pod_name}"
+                     puts "A pod with this name already exists"
+                     exit(1)
+                   elsif existing_pod
+                     existing_pod
+                   else
+                     Helpers.fetch_pods(context: context, filters: { tier: tier || 'terminal' }).sample
+                   end
 
       if dedicated
-        # Create a dedicated temp pod to run in
-        # This is useful if you would like to have a persistent connection that doesn't get killed
-        # when someone updates the terminal deployment, or if you want to avoid noisy neighbors
-        # connected to the same pod.
-        temp_name = pod_name || "temp-#{Random.unique_name}"
+        new_pod_name = create_dedicated_pod(target_pod, pod_name)
 
-        # Construct a spec for the temp pod
-        spec = target_pod['spec']
-        temp_pod = {
-          apiVersion: target_pod['apiVersion'],
-          kind: 'Pod',
-          spec: spec,
-          metadata: {
-            name: temp_name,
-            annotations: {
-              owner: Helpers.shell_username
-            }
-          }
-        }
-        # Don't restart the pod when it dies
-        spec['restartPolicy'] = 'Never'
-        # Overwrite container commands with something that times out, so if the client disconnects
-        # there's a limited amount of time that the temp pod is still taking up resources
-        # Note that this will break a pods which depends on containers running real commands, but
-        # for a simple terminal pod it's fine
-        spec['containers'].each do |container|
-          container['command'] = ['sleep', '86400'] # 86400 seconds = 24 hours
-        end
-
-        puts 'Creating dedicated pod...'
-        unless system("kubectl --namespace=#{app} create -f - <<JSON\n#{temp_pod.to_json}\nJSON")
-          puts 'Failed to create dedicated pod'
-          exit(1)
-        end
-
-        print 'Waiting for dedicated pod to start...'
-        loop do
-          pod = JSON.parse(kubectl("get pods/#{temp_name} -o json", context: context, return_output: true))
-          break if pod['status']['phase'] == 'Running'
-          print '.'
-          sleep 1
-        end
-        print "\n"
-
-        connect_to_pod(temp_name, command)
-
-        # Clean up on disconnect so temp pod isn't taking up resources
-        unless kubectl("delete pods/#{temp_name}", context: context)
-          puts 'Failed to delete temp pod'
-        end
+        connect_to_pod(new_pod_name, command)
+        clean_up_pod(new_pod_name)
+      elsif target_pod.nil?
+        puts 'Could not find pod to connect to'
+        exit(1)
       else
         # If we don't need a dedicated pod, it's way easier - just connect to the already running one
         connect_to_pod(target_pod.dig('metadata', 'name'), command)
+      end
+    end
+
+    # Create a dedicated temp pod to run in
+    # This is useful if you would like to have a persistent connection that doesn't get killed
+    # when someone updates the terminal deployment, or if you want to avoid noisy neighbors
+    # connected to the same pod.
+    def create_dedicated_pod(target_pod, pod_name = "temp-#{Random.unique_name}")
+      spec = target_pod['spec']
+      temp_pod = {
+        apiVersion: target_pod['apiVersion'],
+        kind: 'Pod',
+        spec: spec,
+        metadata: {
+          name: pod_name,
+          annotations: {
+            owner: Helpers.shell_username
+          }
+        }
+      }
+      # Don't restart the pod when it dies
+      spec['restartPolicy'] = 'Never'
+      # Overwrite container commands with something that times out, so if the client disconnects
+      # there's a limited amount of time that the temp pod is still taking up resources
+      # Note that this will break a pods which depends on containers running real commands, but
+      # for a simple terminal pod it's fine
+      spec['containers'].each do |container|
+        container['command'] = ['sleep', '86400'] # 86400 seconds = 24 hours
+      end
+
+      puts 'Creating dedicated pod...'
+      unless system("kubectl --namespace=#{app} create -f - <<JSON\n#{temp_pod.to_json}\nJSON")
+        puts 'Failed to create dedicated pod'
+        exit(1)
+      end
+
+      print 'Waiting for dedicated pod to start...'
+      loop do
+        pod = JSON.parse(kubectl("get pods/#{pod_name} -o json", context: context, return_output: true))
+        break if pod['status']['phase'] == 'Running'
+        print '.'
+        sleep 1
+      end
+      print "\n"
+
+      pod_name
+    end
+
+    # Clean up pod so it isn't taking up resources. Usually only for dedicated pods
+    def clean_up_pod(pod_name)
+      unless kubectl("delete pods/#{pod_name}", context: context)
+        puts 'Failed to delete temp pod'
       end
     end
 
