@@ -98,10 +98,14 @@ module Seira
                    end
 
       if dedicated
-        new_pod_name = create_dedicated_pod(target_pod, pod_name)
+        new_pod = if pod_name.nil?
+                    create_dedicated_pod(target_pod)
+                  else
+                    create_dedicated_pod(target_pod, pod_name)
+                  end
 
-        connect_to_pod(new_pod_name, command)
-        clean_up_pod(new_pod_name)
+        connect_to_pod(new_pod, command)
+        clean_up_pod(new_pod)
       elsif target_pod.nil?
         puts 'Could not find pod to connect to'
         exit(1)
@@ -135,7 +139,7 @@ module Seira
       # Note that this will break a pods which depends on containers running real commands, but
       # for a simple terminal pod it's fine
       spec['containers'].each do |container|
-        container['command'] = ['sleep', '86400'] # 86400 seconds = 24 hours
+        container['command'] = %w[sleep 86400] # 86400 seconds = 24 hours
       end
 
       puts 'Creating dedicated pod...'
