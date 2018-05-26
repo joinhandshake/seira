@@ -93,8 +93,11 @@ module Seira
                      exit(1)
                    elsif existing_pod
                      existing_pod
-                   else
+                   elsif dedicated || pod_name.to_s.empty?
                      Helpers.fetch_pods(context: context, filters: { tier: tier || 'terminal' }).sample
+                   else
+                     puts 'Could not find pod to connect to'
+                     exit(1)
                    end
 
       if dedicated
@@ -106,9 +109,6 @@ module Seira
 
         connect_to_pod(new_pod, command)
         clean_up_pod(new_pod)
-      elsif target_pod.nil?
-        puts 'Could not find pod to connect to'
-        exit(1)
       else
         # If we don't need a dedicated pod, it's way easier - just connect to the already running one
         connect_to_pod(target_pod.dig('metadata', 'name'), command)
