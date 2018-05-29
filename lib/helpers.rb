@@ -17,6 +17,11 @@ module Seira
         JSON.parse(output)['items']
       end
 
+      def fetch_pod(name, context:)
+        output = Seira::Commands.kubectl("get pod #{name} -o json", context: context, return_output: true)
+        JSON.parse(output) unless output.empty?
+      end
+
       def log_link(context:, query:)
         link = context[:settings].log_link_format
         return nil if link.nil?
