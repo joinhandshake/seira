@@ -2,7 +2,7 @@ AllCops:
   Exclude:
     - bin/**/*
 
-  TargetRubyVersion: 2.4.1
+  TargetRubyVersion: 2.5.1
 
 Rails:
   Enabled: false
