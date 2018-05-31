@@ -6,6 +6,26 @@ module Seira
 
     VALID_ACTIONS = %w[help list delete run].freeze
     SUMMARY = "Manage your application's jobs.".freeze
+    RESOURCE_SIZES = {
+      '1' => {
+        'CPU_REQUEST' => '200m',
+        'CPU_LIMIT' => '500m',
+        'MEMORY_REQUEST' => '500Mi',
+        'MEMORY_LIMIT' => '1Gi',
+      },
+      '2' => {
+        'CPU_REQUEST' => '1',
+        'CPU_LIMIT' => '2',
+        'MEMORY_REQUEST' => '2Gi',
+        'MEMORY_LIMIT' => '4Gi',
+      },
+      '3' => {
+        'CPU_REQUEST' => '4',
+        'CPU_LIMIT' => '6',
+        'MEMORY_REQUEST' => '10Gi',
+        'MEMORY_LIMIT' => '15Gi',
+      }
+    }.freeze
 
     attr_reader :app, :action, :args, :job_name, :context
 
@@ -54,6 +74,7 @@ module Seira
       # Set defaults
       async = false # Wait for job to finish before continuing.
       no_delete = false # Delete at end
+      resource_hash = RESOURCE_SIZES['1']
 
       # Loop through args and process any that aren't just the command to run
       loop do
@@ -70,6 +91,9 @@ module Seira
           no_delete = true
         elsif arg == '--no-delete'
           no_delete = true
+        elsif arg.start_with?('--size=')
+          size = arg.split('=')[1]
+          resource_hash = RESOURCE_SIZES[size]
         else
           puts "Warning: Unrecognized argument #{arg}"
         end
@@ -77,19 +101,14 @@ module Seira
         args.shift
       end
 
-      # TODO: Configurable CPU and memory by args such as large, small, xlarge.
       command = args.join(' ')
       unique_name = "#{app}-run-#{Random.unique_name}"
       revision = gcp_app.ask_cluster_for_current_revision # TODO: Make more reliable, especially with no web tier
       replacement_hash = {
         'UNIQUE_NAME' => unique_name,
         'REVISION' => revision,
-        'COMMAND' => %("sh", "-c", "#{command}"),
-        'CPU_REQUEST' => '200m',
-        'CPU_LIMIT' => '500m',
-        'MEMORY_REQUEST' => '500Mi',
-        'MEMORY_LIMIT' => '1Gi',
-      }
+        'COMMAND' => %("sh", "-c", "#{command}")
+      }.merge(resource_hash)
 
       source = "kubernetes/#{context[:cluster]}/#{app}" # TODO: Move to method in app.rb
       Dir.mktmpdir do |destination|

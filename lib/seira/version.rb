@@ -1,3 +1,3 @@
 module Seira
-  VERSION = "0.4.6".freeze
+  VERSION = "0.4.8".freeze
 end

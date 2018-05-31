@@ -53,6 +53,7 @@ seira:
     internal:
       project: org-internal
       cluster: gke_org-internal_us-central1-a_internal
+      zone: us-central1-b
       aliases:
         - "i"
     staging:
