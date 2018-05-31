@@ -113,18 +113,29 @@ module Seira
       source = "kubernetes/#{context[:cluster]}/#{app}" # TODO: Move to method in app.rb
       Dir.mktmpdir do |destination|
         revision = ENV['REVISION']
-        file_name = "template.yaml"
+        file_name = discover_job_template_file_name(source)
 
         FileUtils.mkdir_p destination # Create the nested directory
         FileUtils.copy_file "#{source}/jobs/#{file_name}", "#{destination}/#{file_name}"
 
         # TOOD: Move this into a method since it is copied from app.rb
         text = File.read("#{destination}/#{file_name}")
+
+        # First run it through ERB if it should be
+        if file_name.end_with?('.erb')
+          locals = {}.merge(replacement_hash)
+          renderer = Seira::Util::ResourceRenderer.new(template: text, context: context, locals: locals)
+          text = renderer.render
+        end
+
         new_contents = text
         replacement_hash.each do |key, value|
           new_contents.gsub!(key, value)
         end
-        File.open("#{destination}/#{file_name}", 'w') { |file| file.write(new_contents) }
+
+        target_name = file_name.gsub('.erb', '')
+
+        File.open("#{destination}/#{target_name}", 'w') { |file| file.write(new_contents) }
 
         kubectl("apply -f #{destination}", context: context)
         log_link = Helpers.log_link(context: context, query: unique_name)
@@ -160,6 +171,14 @@ module Seira
 
         # If the job did not succeed, exit nonzero so calling scripts know something went wrong
         exit(1) unless status == "succeeded"
+      end
+    end
+
+    def discover_job_template_file_name(source)
+      if File.exist?("#{source}/jobs/template.yaml.erb")
+        "template.yaml.erb"
+      else
+        "template.yaml"
       end
     end
   end
