@@ -42,9 +42,7 @@ module Seira
         @summary[secret_name] = 'fetched'
 
         # Validate we actually get something back
-        unless secret_value
-          fail "Missing value for secret #{secret_name}"
-        end
+        fail "Missing value for secret #{secret_name}" unless secret_value
 
         secret_value
       end
