@@ -113,7 +113,7 @@ module Seira
       source = "kubernetes/#{context[:cluster]}/#{app}" # TODO: Move to method in app.rb
       Dir.mktmpdir do |destination|
         revision = ENV['REVISION']
-        file_name = "template.yaml.erb"
+        file_name = discover_job_template_file_name(source)
 
         FileUtils.mkdir_p destination # Create the nested directory
         FileUtils.copy_file "#{source}/jobs/#{file_name}", "#{destination}/#{file_name}"
@@ -171,6 +171,14 @@ module Seira
 
         # If the job did not succeed, exit nonzero so calling scripts know something went wrong
         exit(1) unless status == "succeeded"
+      end
+    end
+
+    def discover_job_template_file_name(source)
+      if File.exist?("#{source}/jobs/template.yaml.erb")
+        "template.yaml.erb"
+      else
+        "template.yaml"
       end
     end
   end
