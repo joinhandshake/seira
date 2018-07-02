@@ -10,10 +10,12 @@ module Seira
       end
     end
 
-    # https://www.d.umn.edu/~rave0029/research/adjectives1.txt
+    # List sourced from university research web site: https://www.d.umn.edu/~rave0029/research/adjectives1.txt. A basic
+    # scan was done to make sure words are relatively appropriate, and it does look like a fairly appropriate list. Also
+    # from a university research site, which should help in that regard.
     def self.adjective
       adjectives_lis_file  = File.join(File.expand_path('../..', File.dirname(__FILE__)), 'resources', 'adjectives.txt')
-      CSV.open(adjectives_lis_file, "r").map(&:chomp).map(&:strip).sample
+      CSV.open(adjectives_lis_file, "r").map(&:first).map(&:chomp).map(&:strip).sample
     end
 
     def self.animal
