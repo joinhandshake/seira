@@ -12,7 +12,8 @@ module Seira
 
     # https://www.d.umn.edu/~rave0029/research/adjectives1.txt
     def self.adjective
-      CSV.open("resources/adjectives.txt", "r").map(&:chomp).map(&:strip).sample
+      adjectives_lis_file  = File.join(File.expand_path('../..', File.dirname(__FILE__)), 'resources', 'adjectives.txt')
+      CSV.open(adjectives_lis_file, "r").map(&:chomp).map(&:strip).sample
     end
 
     def self.animal
