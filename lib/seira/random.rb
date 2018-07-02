@@ -1,43 +1,18 @@
-# For random colors for resource installations via helm
+require 'csv'
+
+# For random names for building Jobs, pods, and other resources
 module Seira
   class Random
     def self.unique_name(existing = [])
       loop do
-        name = "#{color}-#{animal}"
+        name = "#{adjective}-#{animal}"
         return name unless existing.include? name
       end
     end
 
-    def self.color
-      %w[
-        red
-        green
-        blue
-        yellow
-        black
-        onyx
-        aqua
-        amber
-        violet
-        gray
-        tan
-        purple
-        white
-        pink
-        lime
-        orange
-        cherry
-        charcoal
-        coral
-        cyan
-        crimson
-        gold
-        silver
-        lemon
-        mustard
-        brown
-        tulip
-      ].sample
+    # https://www.d.umn.edu/~rave0029/research/adjectives1.txt
+    def self.adjective
+      CSV.open("resources/adjectives.txt", "r").map(&:chomp).map(&:strip).sample
     end
 
     def self.animal
