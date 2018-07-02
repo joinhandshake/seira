@@ -3,10 +3,15 @@ require 'csv'
 # For random names for building Jobs, pods, and other resources
 module Seira
   class Random
+    MAX_UNIQUE_NAME_ATTEMPTS = 10
+
     def self.unique_name(existing = [])
+      attempts = 0
       loop do
         name = "#{adjective}-#{animal}"
+        attempts += 1
         return name unless existing.include? name
+        fail "Too many failed unique name attempts" if attempts > MAX_UNIQUE_NAME_ATTEMPTS
       end
     end
 

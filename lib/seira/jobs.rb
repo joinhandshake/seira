@@ -101,8 +101,9 @@ module Seira
         args.shift
       end
 
+      existing_job_names = kubectl("get jobs --output=jsonpath={.items..metadata.name}", context: context, clean_output: true, return_output: true).split(" ").map(&:strip).map { |name| name.gsub(/^#{app}-run-/, '') }
       command = args.join(' ')
-      unique_name = "#{app}-run-#{Random.unique_name}"
+      unique_name = "#{app}-run-#{Random.unique_name(existing_job_names)}"
       revision = gcp_app.ask_cluster_for_current_revision # TODO: Make more reliable, especially with no web tier
       replacement_hash = {
         'UNIQUE_NAME' => unique_name,
