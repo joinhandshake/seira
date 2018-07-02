@@ -19,7 +19,7 @@ module Seira
     # scan was done to make sure words are relatively appropriate, and it does look like a fairly appropriate list. Also
     # from a university research site, which should help in that regard.
     def self.adjective
-      adjectives_lis_file  = File.join(File.expand_path('../..', File.dirname(__FILE__)), 'resources', 'adjectives.txt')
+      adjectives_lis_file = File.join(File.expand_path('../..', File.dirname(__FILE__)), 'resources', 'adjectives.txt')
       CSV.open(adjectives_lis_file, "r").map(&:first).map(&:chomp).map(&:strip).sample
     end
 
