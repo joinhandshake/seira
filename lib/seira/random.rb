@@ -1,43 +1,24 @@
-# For random colors for resource installations via helm
+require 'csv'
+
+# For random names for building Jobs, pods, and other resources
 module Seira
   class Random
+    MAX_UNIQUE_NAME_ATTEMPTS = 10
+
     def self.unique_name(existing = [])
+      attempts = 0
       loop do
-        name = "#{color}-#{animal}"
+        name = "#{adjective}-#{animal}"
+        attempts += 1
         return name unless existing.include? name
+        fail "Too many failed unique name attempts" if attempts > MAX_UNIQUE_NAME_ATTEMPTS
       end
     end
 
-    def self.color
-      %w[
-        red
-        green
-        blue
-        yellow
-        black
-        onyx
-        aqua
-        amber
-        violet
-        gray
-        tan
-        purple
-        white
-        pink
-        lime
-        orange
-        cherry
-        charcoal
-        coral
-        cyan
-        crimson
-        gold
-        silver
-        lemon
-        mustard
-        brown
-        tulip
-      ].sample
+    # List sourced from https://www.mobap.edu/wp-content/uploads/2013/01/list_of_adjectives.pdf
+    def self.adjective
+      adjectives_lis_file = File.join(File.expand_path('../..', File.dirname(__FILE__)), 'resources', 'adjectives.txt')
+      CSV.open(adjectives_lis_file, "r").map(&:first).map(&:chomp).map(&:strip).sample
     end
 
     def self.animal
