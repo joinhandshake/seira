@@ -247,7 +247,6 @@ muddy
 mysterious
 narrow
 nasty
-naughty
 nervous
 nonchalant
 nonsensical
@@ -353,7 +352,6 @@ timely
 tricky
 trite
 troubled
-twitter pated
 uneven
 unsightly
 upset
