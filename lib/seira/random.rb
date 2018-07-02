@@ -15,9 +15,7 @@ module Seira
       end
     end
 
-    # List sourced from university research web site: https://www.d.umn.edu/~rave0029/research/adjectives1.txt. A basic
-    # scan was done to make sure words are relatively appropriate, and it does look like a fairly appropriate list. Also
-    # from a university research site, which should help in that regard.
+    # List sourced from https://www.mobap.edu/wp-content/uploads/2013/01/list_of_adjectives.pdf
     def self.adjective
       adjectives_lis_file = File.join(File.expand_path('../..', File.dirname(__FILE__)), 'resources', 'adjectives.txt')
       CSV.open(adjectives_lis_file, "r").map(&:first).map(&:chomp).map(&:strip).sample
