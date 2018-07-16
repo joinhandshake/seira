@@ -11,8 +11,16 @@ module Seira
         name = "#{adjective}-#{animal}"
         attempts += 1
         return name unless existing.include? name
+        return name unless unallowed_name?(name)
         fail "Too many failed unique name attempts" if attempts > MAX_UNIQUE_NAME_ATTEMPTS
       end
+    end
+
+    def self.unallowed_name?(name)
+      # Robin always keeps his cool
+      return true if name == "exasperated-robin"
+
+      false
     end
 
     # List sourced from https://www.mobap.edu/wp-content/uploads/2013/01/list_of_adjectives.pdf
