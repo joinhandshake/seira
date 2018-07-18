@@ -43,7 +43,11 @@ module Seira
       cluster_metadata = settings.clusters[target_cluster]
 
       puts("Switching to gcloud config of '#{target_cluster}' and kubernetes cluster of '#{cluster_metadata['cluster']}'") if verbose
+
+      ensure_command_works("gcloud")
       exit(1) unless system("gcloud config configurations activate #{target_cluster}")
+
+      ensure_command_works("kubectl")
       exit(1) unless system("kubectl config use-context #{cluster_metadata['cluster']}")
 
       # If we haven't exited by now, it was successful
@@ -118,6 +122,13 @@ module Seira
         puts 'Master updated successfully!'
       else
         puts 'Failed to update master.'
+        exit(1)
+      end
+    end
+
+    def ensure_command_works(command)
+      unless system("command -v #{command} &> /dev/null")
+        puts "#{command} is not installed"
         exit(1)
       end
     end
