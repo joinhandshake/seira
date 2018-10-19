@@ -60,6 +60,10 @@ module Seira
       settings['seira']['clusters'][cluster]['project']
     end
 
+    def expected_environment_variable_during_deploys
+      settings['seira']['expected_environment_variable_during_deploys']
+    end
+
     private
 
     def parse_settings

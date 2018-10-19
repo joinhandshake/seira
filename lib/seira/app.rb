@@ -80,6 +80,11 @@ module Seira
       revision = nil
       deployment = :all
 
+      warn_env = context[:settings].expected_environment_variable_during_deploys
+      if warn_env && ENV[warn_env].nil?
+        exit(1) unless HighLine.agree("WARNING: Expected '#{warn_env}' to be present, but is not. This might mean your are running a deploy in an environment that is not safe. Are you sure you want to continue? This command will apply your *local* kubernetes configs. If you continue, make sure you have the latest master changes and valid local YAML.")
+      end
+
       args.each do |arg|
         if arg == '--async'
           async = true
