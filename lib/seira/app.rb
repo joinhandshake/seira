@@ -80,6 +80,11 @@ module Seira
       revision = nil
       deployment = :all
 
+      warn_env = context[:settings].warn_if_env_not_present_for_apply
+        if warn_env && ENV[warn_env].nil?
+          exit(1) unless HighLine.agree("WARNING: The Environment Variable '#{warn_env}' is not present. Are you sure you want to continue? This command will apply your local Kubernetes configs. If you continue, make sure you have the latest master changes and valid local YAML.")
+        end
+
       args.each do |arg|
         if arg == '--async'
           async = true

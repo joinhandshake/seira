@@ -60,6 +60,10 @@ module Seira
       settings['seira']['clusters'][cluster]['project']
     end
 
+    def warn_if_env_not_present_for_apply
+      settings['seira']['warn_if_env_not_present_for_apply']
+    end
+
     private
 
     def parse_settings
