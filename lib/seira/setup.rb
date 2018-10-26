@@ -80,17 +80,29 @@ module Seira
 
       if cluster_metadata['region']
         system("gcloud config set compute/region #{cluster_metadata['region']}")
+      else
+        system("gcloud config unset compute/region")
       end
+
 
       if cluster_metadata['zone']
         system("gcloud config set compute/zone #{cluster_metadata['zone']}")
+      else
+        system("gcloud config unset compute/zone")
       end
 
       puts "Your new gcloud setup for #{cluster_name}:"
       system("gcloud config configurations describe #{cluster_name}")
 
-      puts "Configuring kubectl for interactions with this project's kubernetes cluster"
-      system("gcloud container clusters get-credentials #{cluster_name} --project #{cluster_metadata['project']}")
+      puts "Configuring kubectl for interactions with this project's kubernetes cluster with region #{cluster_metadata['region']} and zone #{cluster_metadata['zone']}"
+
+      # For regional clusters, we use the beta --region option. For zonal clusters, we pass --zone
+      if cluster_metadata['zone']
+        system("gcloud container clusters get-credentials #{cluster_name} --project #{cluster_metadata['project']} --zone #{cluster_metadata['zone']}")
+      else
+        system("gcloud beta container clusters get-credentials #{cluster_name} --project #{cluster_metadata['project']} --region #{cluster_metadata['region']}")
+      end
+
       puts "Your kubectl is set up with:"
       system("kubectl config current-context")
     end

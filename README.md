@@ -83,6 +83,10 @@ seira:
 
 This specification is read in and used to determine what `gcloud` context to use and what `kubectl` cluster to use when operating commands. For example, `seira internal` will connect to `org-internal` gcloud configuration and `gke_org-internal_us-central1-a_internal` kubectl cluster. For shorthand, `seira i` shorthand is specified as an alias.
 
+### Regions and Zones
+
+All clusters should have a `region` option specified. For zonal clusters (clusters that are NOT regional) should also specify their `zone`.
+
 ### Manifest Files
 
 Seira expects your Kubernetes manifests to exist in the "kubernetes/cluster-name/app-name" directory. When a deploy is run on `foo` app in `staging` cluster, it looks to `kubernetes/staging/foo` directory for the manifest files.
