@@ -76,17 +76,14 @@ module Seira
         system("gcloud auth login")
       end
 
+      # All cluster configs must specify a project and region. Region is required, even
+      # if cluster is zonal, for other things like databases.
       system("gcloud config set project #{cluster_metadata['project']}")
+      system("gcloud config set compute/region #{cluster_metadata['region']}")
 
       # Regional and zonal clusters have slightly different behavior. We need
       # to make sure that the zone is *not* set for regional cluster, or gcloud
       # will complain. And zone *needs* to be set for zonal clusters.
-      if cluster_metadata['region']
-        system("gcloud config set compute/region #{cluster_metadata['region']}")
-      else
-        system("gcloud config unset compute/region")
-      end
-
       if cluster_metadata['zone']
         system("gcloud config set compute/zone #{cluster_metadata['zone']}")
       else
