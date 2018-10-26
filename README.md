@@ -48,27 +48,30 @@ A configuration file is expected at `.seira.yml` relative path. Below is an exam
 ```
 seira:
   organization_id: "11111"
-  default_zone: "us-central1-a"
   clusters:
     internal:
       project: org-internal
       cluster: gke_org-internal_us-central1-a_internal
+      region: us-central1
       zone: us-central1-b
       aliases:
         - "i"
     staging:
       project: org-staging
       cluster: gke_org-staging_us-central1-a_staging
+      region: us-central1
       aliases:
         - "s"
     demo:
       project: org-demo
       cluster: gke_org-demo_us-central1-a_demo
+      region: us-central1
       aliases:
         - "d"
     production:
       project: org-production
       cluster: gke_org-production_us-central1-a_production
+      region: us-central1
       aliases:
         - "p"
   applications:
@@ -79,6 +82,10 @@ seira:
 ```
 
 This specification is read in and used to determine what `gcloud` context to use and what `kubectl` cluster to use when operating commands. For example, `seira internal` will connect to `org-internal` gcloud configuration and `gke_org-internal_us-central1-a_internal` kubectl cluster. For shorthand, `seira i` shorthand is specified as an alias.
+
+### Regions and Zones
+
+All clusters should have a `region` option specified. For zonal clusters (clusters that are NOT regional) should also specify their `zone`.
 
 ### Manifest Files
 

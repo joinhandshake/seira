@@ -136,7 +136,8 @@ module Seira
         cluster: cluster,
         project: project,
         settings: settings,
-        default_zone: settings.default_zone,
+        region: cluster['region'],
+        zone: cluster['zone'],
         app: app,
         action: action,
         args: args
