@@ -266,15 +266,11 @@ spec:
             - name: "MAX_CLIENT_CONN"
               value: "1000"
             - name: "MIN_POOL_SIZE"
-              value: "30"
+              value: "20" # This and DEFAULT should be roughly cpu cores * 2. Don't set too high.
             - name: "DEFAULT_POOL_SIZE"
-              value: "30"
-            - name: "RESERVE_POOL_SIZE"
               value: "20"
             - name: "MAX_DB_CONNECTIONS"
-              value: "50"
-            - name: "RESERVE_POOL_TIMEOUT"
-              value: "1.0" # 1 seconds
+              value: "20"
             - name: "POOL_MODE"
               value: "transaction"
           readinessProbe:
