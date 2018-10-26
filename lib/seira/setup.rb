@@ -78,12 +78,14 @@ module Seira
 
       system("gcloud config set project #{cluster_metadata['project']}")
 
+      # Regional and zonal clusters have slightly different behavior. We need
+      # to make sure that the zone is *not* set for regional cluster, or gcloud
+      # will complain. And zone *needs* to be set for zonal clusters.
       if cluster_metadata['region']
         system("gcloud config set compute/region #{cluster_metadata['region']}")
       else
         system("gcloud config unset compute/region")
       end
-
 
       if cluster_metadata['zone']
         system("gcloud config set compute/zone #{cluster_metadata['zone']}")
@@ -96,7 +98,8 @@ module Seira
 
       puts "Configuring kubectl for interactions with this project's kubernetes cluster with region #{cluster_metadata['region']} and zone #{cluster_metadata['zone']}"
 
-      # For regional clusters, we use the beta --region option. For zonal clusters, we pass --zone
+      # For regional clusters, we use the beta --region option. For zonal clusters, we pass --zone. Regional
+      # clusters are in the beta feature of gcloud.
       if cluster_metadata['zone']
         system("gcloud container clusters get-credentials #{cluster_name} --project #{cluster_metadata['project']} --zone #{cluster_metadata['zone']}")
       else
