@@ -20,10 +20,6 @@ module Seira
       settings['seira']['organization_id']
     end
 
-    def default_zone
-      settings['seira']['default_zone']
-    end
-
     def applications
       settings['seira']['applications'].map { |app| app['name'] }
     end

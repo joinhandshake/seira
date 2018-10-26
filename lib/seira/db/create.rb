@@ -204,29 +204,7 @@ module Seira
 
       def write_pgbouncer_yaml
         # TODO: Clean this up by moving into a proper templated yaml file
-        # TODO: Fix warning from cloudsql-proxy. We use context[:default_zone] for the DB Instance name
-        # which causes this error: got region "us-central1-c", want "us-central1".
         pgbouncer_yaml = <<-FOO
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: #{pgbouncer_configs_name}
-  namespace: #{app}
-data:
-  DB_HOST: "127.0.0.1"
-  DB_PORT: "5432"
-  LISTEN_PORT: "6432"
-  LISTEN_ADDRESS: "*"
-  TCP_KEEPALIVE: "1"
-  TCP_KEEPCNT: "5"
-  TCP_KEEPIDLE: "300" # see: https://git.io/vi0Aj
-  TCP_KEEPINTVL: "300"
-  LOG_DISCONNECTIONS: "0" # spammy, not needed
-  MAX_CLIENT_CONN: "500"
-  MAX_DB_CONNECTIONS: "90"
-  DEFAULT_POOL_SIZE: "90"
-  POOL_MODE: "transaction"
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -239,7 +217,6 @@ metadata:
     database: #{name}
 spec:
   replicas: 2
-  minReadySeconds: 20
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -268,6 +245,38 @@ spec:
               value: "6432"
             - name: "PGDATABASE"
               value: "#{@database_name || default_database_name}"
+            - name: "DB_HOST"
+              value: "127.0.0.1" # Exposed by cloudsql proxy
+            - name: "DB_PORT"
+              value: "5432"
+            - name: "LISTEN_PORT"
+              value: "6432"
+            - name: "LISTEN_ADDRESS"
+              value: "*"
+            - name: "TCP_KEEPALIVE"
+              value: "1"
+            - name: "TCP_KEEPCNT"
+              value: "5"
+            - name: "TCP_KEEPIDLE"
+              value: "300" # see: https://git.io/vi0Aj
+            - name: "TCP_KEEPINTVL"
+              value: "300"
+            - name: "LOG_DISCONNECTIONS"
+              value: "0" # spammy, not needed
+            - name: "MAX_CLIENT_CONN"
+              value: "1000"
+            - name: "MIN_POOL_SIZE"
+              value: "30"
+            - name: "DEFAULT_POOL_SIZE"
+              value: "30"
+            - name: "RESERVE_POOL_SIZE"
+              value: "20"
+            - name: "MAX_DB_CONNECTIONS"
+              value: "50"
+            - name: "RESERVE_POOL_TIMEOUT"
+              value: "1.0" # 1 seconds
+            - name: "POOL_MODE"
+              value: "transaction"
           readinessProbe:
             exec:
               command: ["psql", "-c", "SELECT 1;"]
@@ -287,7 +296,7 @@ spec:
           command:
             - /cloud_sql_proxy
             - --dir=/cloudsql
-            - -instances=#{context[:project]}:#{context[:default_zone]}:#{name}=tcp:5432
+            - -instances=#{context[:project]}:#{context[:region]}:#{name}=tcp:5432
             - -credential_file=/secrets/cloudsql/credentials.json
           ports:
             - containerPort: 5432
