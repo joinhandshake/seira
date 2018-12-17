@@ -95,10 +95,12 @@ module Seira
                      existing_pod
                    elsif dedicated || pod_name.to_s.empty?
                      Helpers.fetch_pods(context: context, filters: { tier: tier || 'terminal' }).sample
-                   else
-                     puts 'Could not find pod to connect to'
-                     exit(1)
                    end
+
+      if target_pod.nil?
+        puts 'Could not find pod to connect to'
+        exit(1)
+      end
 
       if dedicated
         new_pod = if pod_name.nil?
