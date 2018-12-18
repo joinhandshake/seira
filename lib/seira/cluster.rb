@@ -7,7 +7,7 @@ module Seira
   class Cluster
     include Seira::Commands
 
-    VALID_ACTIONS = %w[help bootstrap upgrade-master].freeze
+    VALID_ACTIONS = %w[help upgrade-master].freeze
     SUMMARY = "For managing whole clusters.".freeze
 
     attr_reader :action, :args, :context, :settings
@@ -23,8 +23,6 @@ module Seira
       case action
       when 'help'
         run_help
-      when 'bootstrap'
-        run_bootstrap
       when 'upgrade-master'
         run_upgrade_master
       else
@@ -64,20 +62,6 @@ module Seira
     end
 
     private
-
-    # Intended for use when spinning up a whole new cluster. It stores two main secrets
-    # in the default space that are intended to be copied into individual namespaces when
-    # new apps are built.
-    def run_bootstrap
-      dockercfg_location = args[0]
-
-      if dockercfg_location.nil? || dockercfg_location == ''
-        puts 'Please specify the dockercfg json key location as first param.'
-        exit(1)
-      end
-
-      puts `kubectl create secret docker-registry gcr-secret --docker-username=_json_key --docker-password="$(cat #{dockercfg_location})" --docker-server=https://gcr.io --docker-email=doesnotmatter@example.com`
-    end
 
     def run_upgrade_master
       cluster = context[:cluster]
