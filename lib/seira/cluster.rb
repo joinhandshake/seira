@@ -70,20 +70,13 @@ module Seira
     # new apps are built.
     def run_bootstrap
       dockercfg_location = args[0]
-      cloudsql_credentials_location = args[1]
 
       if dockercfg_location.nil? || dockercfg_location == ''
         puts 'Please specify the dockercfg json key location as first param.'
         exit(1)
       end
 
-      if cloudsql_credentials_location.nil? || cloudsql_credentials_location == ''
-        puts 'Please specify the cloudsql_credentials_location json key location as second param.'
-        exit(1)
-      end
-
       puts `kubectl create secret docker-registry gcr-secret --docker-username=_json_key --docker-password="$(cat #{dockercfg_location})" --docker-server=https://gcr.io --docker-email=doesnotmatter@example.com`
-      puts `kubectl create secret generic cloudsql-credentials --namespace default --from-file=credentials.json=#{cloudsql_credentials_location}`
     end
 
     def run_upgrade_master
