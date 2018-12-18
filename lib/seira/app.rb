@@ -68,8 +68,6 @@ module Seira
       # Create namespace before anything else
       kubectl("apply -f kubernetes/#{context[:cluster]}/#{app}/00-namespace.yaml", context: context)
       bootstrap_main_secret
-      bootstrap_cloudsql_secret
-      bootstrap_gcr_secret
 
       puts "Successfully installed"
     end
@@ -182,20 +180,6 @@ module Seira
       rails_env = Helpers.rails_env(context: context)
 
       kubectl("create secret generic #{main_secret_name} --from-literal=RAILS_ENV=#{rails_env} --from-literal=RACK_ENV=#{rails_env}", context: context)
-    end
-
-    # We use a secret in our container to use a service account to connect to our cloudsql databases. The secret in 'default'
-    # namespace can't be used in this namespace, so copy it over to our namespace.
-    def bootstrap_gcr_secret
-      secrets = Seira::Secrets.new(app: app, action: action, args: args, context: context)
-      secrets.copy_secret_across_namespace(key: 'gcr-secret', from: 'default', to: app)
-    end
-
-    # We use a secret in our container to use a service account to connect to our docker registry. The secret in 'default'
-    # namespace can't be used in this namespace, so copy it over to our namespace.
-    def bootstrap_cloudsql_secret
-      secrets = Seira::Secrets.new(app: app, action: action, args: args, context: context)
-      secrets.copy_secret_across_namespace(key: 'cloudsql-credentials', from: 'default', to: app)
     end
 
     def find_and_replace_revision(source:, destination:, replacement_hash:)
