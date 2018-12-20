@@ -6,7 +6,7 @@ module Seira
       attr_reader :app, :action, :args, :context
 
       attr_reader :name, :version, :cpu, :memory, :storage, :replica_for, :make_highly_available
-      attr_reader :root_password, :proxyuser_password, :alter_proxy_user_roles_only
+      attr_reader :root_password, :proxyuser_password
 
       def initialize(app:, action:, args:, context:)
         @app = app
@@ -25,15 +25,9 @@ module Seira
 
         @root_password = nil
         @proxyuser_password = nil
-        @alter_proxy_user_roles_only = args.include?('--alter-proxy-user-roles-only')
       end
 
       def run(existing_instances)
-        if alter_proxy_user_roles_only
-          alter_proxy_user_roles
-          return
-        end
-
         @name = "#{app}-#{Seira::Random.unique_name(existing_instances)}"
 
         run_create_command
@@ -145,46 +139,7 @@ module Seira
       end
 
       def alter_proxy_user_roles
-        # Connect to the instance and remove some of the default group memberships and permissions
-        # from proxyuser, leaving it with only what it needs to be able to do
-
-        # save db name and password to a tmp file in case the update fails, so
-        # this can be easily rerun
-
-        if alter_proxy_user_roles_only
-          begin
-            lines = IO.readlines("tmp/alter_proxy_user_roles.txt")
-            @name = lines[0]
-            @root_password = lines[1]
-          rescue
-            puts "Expected tmp file containing db name and password"
-            exit(1)
-          end
-        else
-          FileUtils.mkdir_p 'tmp'
-          File.write("tmp/alter_proxy_user_roles.txt", "#{name}\n#{root_password}")
-        end
-
-        expect_script = <<~BASH
-          set timeout 90
-          spawn gcloud sql connect #{name}
-          expect "Password for user postgres:"
-          send "#{root_password}\\r"
-          expect "postgres=>"
-          send "ALTER ROLE proxyuser NOCREATEDB NOCREATEROLE;\\r"
-          expect "postgres=>"
-        BASH
-        if system("expect <<EOF\n#{expect_script}EOF")
-          puts "Successfully removed unnecessary permissions from proxyuser"
-          File.delete("tmp/alter_proxy_user_roles.txt")
-        else
-          puts "Failed to remove unnecessary permissions from proxyuser."
-          puts "You may need to whitelist the correct IP in the gcloud UI."
-          puts "You can get the correct IP from https://www.whatismyip.com/"
-          puts "Please rerun with --alter-proxy-user-roles-only after whitelisting the correct IP"
-          puts "Make sure to remove it from the whitelist afterward."
-          exit(1)
-        end
+        Seira::Db::AlterProxyuserRoles.new(app: app, action: action, args: [name, root_password], context: context).run
       end
 
       def set_secrets
