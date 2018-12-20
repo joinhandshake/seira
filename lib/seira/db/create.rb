@@ -212,6 +212,11 @@ metadata:
     database: #{name}
 spec:
   replicas: 2
+  selector:
+    matchLabels:
+      app: #{app}
+      tier: #{pgbouncer_tier}
+      database: #{name}
   strategy:
     type: RollingUpdate
     rollingUpdate:
