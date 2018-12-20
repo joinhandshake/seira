@@ -246,7 +246,7 @@ module Seira
         # TODO: Clean this up by moving into a proper templated yaml file
         pgbouncer_yaml = <<-FOO
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: #{name}-pgbouncer
