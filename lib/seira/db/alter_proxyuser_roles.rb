@@ -33,7 +33,7 @@ module Seira
           puts "Failed to remove unnecessary permissions from proxyuser."
           puts "You may need to whitelist the correct IP in the gcloud UI."
           puts "You can get the correct IP from https://www.whatismyip.com/"
-          puts "Make sure to remove it from the whitelist afterward."
+          puts "Make sure to remove it from the whitelist after successfully running db alter-proxyuser-roles"
           exit(1)
         end
       end
