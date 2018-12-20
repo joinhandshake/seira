@@ -341,9 +341,9 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - protocol: TCP
-    port: 6432
-    targetPort: 6432
+    - protocol: TCP
+      port: 6432
+      targetPort: 6432
   selector:
     app: #{app}
     tier: #{pgbouncer_tier}
