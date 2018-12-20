@@ -325,6 +325,10 @@ spec:
             requests:
               cpu: 100m
               memory: 300Mi
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "killall -INT pgbouncer && sleep 20"]
 ---
 apiVersion: v1
 kind: Service
