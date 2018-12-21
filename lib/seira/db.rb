@@ -1,13 +1,14 @@
 require 'securerandom'
 require 'English'
 
+require_relative 'db/alter_proxyuser_roles'
 require_relative 'db/create'
 
 module Seira
   class Db
     include Seira::Commands
 
-    VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze create-readonly-user psql table-sizes index-sizes vacuum unused-indexes unused-indices user-connections info].freeze
+    VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze create-readonly-user psql table-sizes index-sizes vacuum unused-indexes unused-indices user-connections info alter-proxyuser-roles].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -55,6 +56,8 @@ module Seira
         run_user_connections
       when 'info'
         run_info
+      when 'alter-proxyuser-roles'
+        run_alter_proxyuser_roles
       else
         fail "Unknown command encountered"
       end
@@ -78,27 +81,32 @@ module Seira
       puts SUMMARY
       puts "\n"
       puts <<~HELPTEXT
-        analyze:              Display database performance information
-        connect:              Open a psql command prompt via gcloud connect. You will be shown the password needed before the prompt opens.
-        create:               Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags.
-        create-readonly-user: Create a database user named by --username=<name> with only SELECT access privileges
-        delete:               Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first.
-        index-sizes:          List sizes of all indexes in the database
-        info:                 Summarize all database instances for the app
-        kill:                 Kill a query
-        list:                 List all postgres instances.
-        ps:                   List running queries
-        psql:                 Open a psql prompt via kubectl exec into a pgbouncer pod.
-        restart:              Fully restart the database.
-        table-sizes:          List sizes of all tables in the database
-        unused-indexes:       Show indexes with zero or low usage
-        user-connections:     List number of connections per user
-        vacuum:               Run a VACUUM ANALYZE
+        analyze:                Display database performance information
+        connect:                Open a psql command prompt via gcloud connect. You will be shown the password needed before the prompt opens.
+        create:                 Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags.
+        create-readonly-user:   Create a database user named by --username=<name> with only SELECT access privileges
+        delete:                 Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first.
+        index-sizes:            List sizes of all indexes in the database
+        info:                   Summarize all database instances for the app
+        kill:                   Kill a query
+        list:                   List all postgres instances.
+        ps:                     List running queries
+        psql:                   Open a psql prompt via kubectl exec into a pgbouncer pod.
+        restart:                Fully restart the database.
+        table-sizes:            List sizes of all tables in the database
+        unused-indexes:         Show indexes with zero or low usage
+        user-connections:       List number of connections per user
+        vacuum:                 Run a VACUUM ANALYZE
+        alter-proxyuser-roles:  Update NOCREATEDB and NOCREATEROLE roles for proxyuser in cloud sql.
       HELPTEXT
     end
 
     def run_create
       Seira::Db::Create.new(app: app, action: action, args: args, context: context).run(existing_instances)
+    end
+
+    def run_alter_proxyuser_roles
+      Seira::Db::AlterProxyuserRoles.new(app: app, action: action, args: args, context: context).run
     end
 
     def run_delete

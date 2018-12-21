@@ -40,6 +40,8 @@ module Seira
         set_secrets
         write_pgbouncer_yaml
 
+        alter_proxy_user_roles if replica_for.nil?
+
         puts "To use this database, deploy the pgbouncer config file that was created and use the ENV that was set."
         puts "To make this database the primary, promote it using the CLI and update the DATABASE_URL."
       end
@@ -79,6 +81,7 @@ module Seira
 
         # Basic configs
         create_command += " --database-version=#{version}"
+        create_command += " --network=default" # allow network to be configurable?
 
         # A read replica cannot have HA, inherits the cpu, mem and storage of its primary
         if replica_for.nil?
@@ -115,7 +118,7 @@ module Seira
         # Set the root user's password to something secure
         @root_password = SecureRandom.urlsafe_base64(32)
 
-        if gcloud("sql users set-password postgres '' --instance=#{name} --password=#{root_password}", context: context, format: :boolean)
+        if gcloud("sql users set-password postgres --instance=#{name} --password=#{root_password}", context: context, format: :boolean)
           puts "Set root password to #{root_password}"
         else
           puts "Failed to set root password"
@@ -127,30 +130,16 @@ module Seira
         # Create proxyuser with secure password
         @proxyuser_password = SecureRandom.urlsafe_base64(32)
 
-        if gcloud("sql users create proxyuser '' --instance=#{name} --password=#{proxyuser_password}", context: context, format: :boolean)
+        if gcloud("sql users create proxyuser --instance=#{name} --password=#{proxyuser_password}", context: context, format: :boolean)
           puts "Created proxyuser with password #{proxyuser_password}"
         else
           puts "Failed to create proxyuser"
           exit(1)
         end
+      end
 
-        # Connect to the instance and remove some of the default group memberships and permissions
-        # from proxyuser, leaving it with only what it needs to be able to do
-        expect_script = <<~BASH
-          set timeout 90
-          spawn gcloud sql connect #{name}
-          expect "Password for user postgres:"
-          send "#{root_password}\\r"
-          expect "postgres=>"
-          send "ALTER ROLE proxyuser NOCREATEDB NOCREATEROLE;\\r"
-          expect "postgres=>"
-        BASH
-        if system("expect <<EOF\n#{expect_script}EOF")
-          puts "Successfully removed unnecessary permissions from proxyuser"
-        else
-          puts "Failed to remove unnecessary permissions from proxyuser"
-          exit(1)
-        end
+      def alter_proxy_user_roles
+        Seira::Db::AlterProxyuserRoles.new(app: app, action: action, args: [name, root_password], context: context).run
       end
 
       def set_secrets
@@ -186,10 +175,6 @@ module Seira
         "#{name}-pgbouncer-secrets"
       end
 
-      def pgbouncer_configs_name
-        "#{name}-pgbouncer-configs"
-      end
-
       def pgbouncer_service_name
         "#{name}-pgbouncer-service"
       end
@@ -202,11 +187,21 @@ module Seira
         "#{app}_#{Helpers.rails_env(context: context)}"
       end
 
+      def ips
+        @_ips ||= begin
+          describe_command = "sql instances describe #{name}"
+          json = JSON.parse(gcloud(describe_command, context: context, format: :json))
+          private_ip = json['ipAddresses'].find { |address| address['type'] == 'PRIVATE' }['ipAddress']
+          public_ip = json['ipAddresses'].find { |address| address['type'] == 'PRIMARY' }['ipAddress']
+          { private: private_ip, public: public_ip }
+        end
+      end
+
       def write_pgbouncer_yaml
         # TODO: Clean this up by moving into a proper templated yaml file
         pgbouncer_yaml = <<-FOO
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: #{name}-pgbouncer
@@ -217,6 +212,11 @@ metadata:
     database: #{name}
 spec:
   replicas: 2
+  selector:
+    matchLabels:
+      app: #{app}
+      tier: #{pgbouncer_tier}
+      database: #{name}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -236,8 +236,6 @@ spec:
             - containerPort: 6432
               protocol: TCP
           envFrom:
-            - configMapRef:
-                name: #{pgbouncer_configs_name}
             - secretRef:
                 name: #{pgbouncer_secret_name}
           env:
@@ -246,7 +244,7 @@ spec:
             - name: "PGDATABASE"
               value: "#{@database_name || default_database_name}"
             - name: "DB_HOST"
-              value: "127.0.0.1" # Exposed by cloudsql proxy
+              value: "#{ips[:private]}" # private IP for #{name}
             - name: "DB_PORT"
               value: "5432"
             - name: "LISTEN_PORT"
@@ -287,33 +285,10 @@ spec:
             requests:
               cpu: 100m
               memory: 300Mi
-        - image: gcr.io/cloudsql-docker/gce-proxy:1.11    # Gcloud SQL Proxy
-          name: cloudsql-proxy
-          command:
-            - /cloud_sql_proxy
-            - --dir=/cloudsql
-            - -instances=#{context[:project]}:#{context[:region]}:#{name}=tcp:5432
-            - -credential_file=/secrets/cloudsql/credentials.json
-          ports:
-            - containerPort: 5432
-              protocol: TCP
-          volumeMounts:
-            - name: cloudsql-credentials
-              mountPath: /secrets/cloudsql
-              readOnly: true
-            - name: ssl-certs
-              mountPath: /etc/ssl/certs
-            - name: cloudsql
-              mountPath: /cloudsql
-      volumes:
-        - name: cloudsql-credentials
-          secret:
-            secretName: cloudsql-credentials
-        - name: cloudsql
-          emptyDir:
-        - name: ssl-certs
-          hostPath:
-            path: /etc/ssl/certs
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "killall -INT pgbouncer && sleep 20"]
 ---
 apiVersion: v1
 kind: Service
@@ -324,12 +299,11 @@ metadata:
     app: #{app}
     tier: #{pgbouncer_tier}
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
-  - protocol: TCP
-    port: 6432
-    targetPort: 6432
-    nodePort: 0
+    - protocol: TCP
+      port: 6432
+      targetPort: 6432
   selector:
     app: #{app}
     tier: #{pgbouncer_tier}
