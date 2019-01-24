@@ -145,6 +145,17 @@ module Seira
     end
 
     def base_validations
+      # gcloud and kubectl is required, hard error if not installed
+      unless system("gcloud version > /dev/null 2>&1")
+        puts "Gcloud library not installed properly. Please install `gcloud` before using seira.".red
+        exit(1)
+      end
+
+      unless system("kubectl version > /dev/null 2>&1")
+        puts "Kubectl library not installed properly. Please install `kubectl` before using seira.".red
+        exit(1)
+      end
+
       # The first arg must always be the cluster. This ensures commands are not run by
       # accident on the wrong kubernetes cluster or gcloud project.
       exit(1) unless Seira::Cluster.new(action: nil, args: nil, context: nil, settings: settings).switch(target_cluster: cluster, verbose: false)
