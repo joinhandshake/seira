@@ -146,12 +146,12 @@ module Seira
 
     def base_validations
       # gcloud and kubectl is required, hard error if not installed
-      unless system("gcloud version > /dev/null 2>&1")
+      unless system("gcloud version -c > /dev/null 2>&1")
         puts "Gcloud library not installed properly. Please install `gcloud` before using seira.".red
         exit(1)
       end
 
-      unless system("kubectl version > /dev/null 2>&1")
+      unless system("kubectl version -c > /dev/null 2>&1")
         puts "Kubectl library not installed properly. Please install `kubectl` before using seira.".red
         exit(1)
       end
