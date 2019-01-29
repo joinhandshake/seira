@@ -151,7 +151,7 @@ module Seira
         exit(1)
       end
 
-      unless system("kubectl version > /dev/null 2>&1")
+      unless system("kubectl version -c > /dev/null 2>&1")
         puts "Kubectl library not installed properly. Please install `kubectl` before using seira.".red
         exit(1)
       end
