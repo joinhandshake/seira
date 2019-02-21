@@ -56,6 +56,14 @@ module Seira
       settings['seira']['clusters'][cluster]['project']
     end
 
+    def region_for_cluster(cluster)
+      settings['seira']['clusters'][cluster]['region']
+    end
+
+    def zone_for_cluster(cluster)
+      settings['seira']['clusters'][cluster]['zone']
+    end
+
     def expected_environment_variable_during_deploys
       settings['seira']['expected_environment_variable_during_deploys']
     end
