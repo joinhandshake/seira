@@ -56,6 +56,8 @@ module Seira
       # arg is not in the ARGV array and should be skipped over
       if ARGV[0] == 'help'
         @category = reversed_args.pop
+      elsif ARGV[0] == 'version'
+        @category = reversed_args.pop
       elsif ARGV[1] == 'cluster'
         cluster = reversed_args.pop
         @category = reversed_args.pop
@@ -99,6 +101,9 @@ module Seira
     def run
       if category == 'help'
         run_base_help
+        exit(0)
+      elsif category == 'version'
+        puts "Seira version: #{Seira::VERSION}"
         exit(0)
       elsif category == 'setup'
         Seira::Setup.new(target: cluster, args: args, settings: settings).run
