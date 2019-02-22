@@ -265,9 +265,8 @@ module Seira
           ALTER DEFAULT PRIVILEGES IN SCHEMA "public" GRANT SELECT ON TABLES TO #{user_name};
         SQL
 
-      ips = Helpers.sql_ips(instance_name, context: context)
-      puts "Connecting to private ip for #{instance_name}: #{ips[:private]}"
-      execute_db_command(admin_commands, as_admin: true, private_ip: ips[:private])
+      puts "Connecting"
+      execute_db_command(admin_commands, as_admin: true)
       execute_db_command(database_commands)
     end
 
@@ -412,9 +411,10 @@ module Seira
       end
     end
 
-    def execute_db_command(sql_command, as_admin: false, interactive: false, print: true, private_ip: '127.0.0.1')
+    def execute_db_command(sql_command, as_admin: false, interactive: false, print: true)
       # TODO(josh): move pgbouncer naming logic here and in Create to a common location
       instance_name = primary_instance
+      private_ip = Helpers.sql_ips(instance_name, context: context)[:private]
       tier = instance_name.gsub("#{app}-", '')
       matching_pods = Helpers.fetch_pods(context: context, filters: { tier: tier })
       if matching_pods.empty?
