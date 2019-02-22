@@ -245,7 +245,7 @@ module Seira
       end
 
       password = SecureRandom.urlsafe_base64(32)
-      if gcloud("sql users create #{user_name} '' --instance=#{instance_name} --password=#{password}", context: context, format: :boolean)
+      if gcloud("sql users create #{user_name} --instance=#{instance_name} --password=#{password}", context: context, format: :boolean)
         puts "Created user '#{user_name}' with password #{password}"
       else
         puts "Failed to create user '#{user_name}'"
@@ -264,7 +264,10 @@ module Seira
           GRANT SELECT ON ALL TABLES IN SCHEMA public TO #{user_name};
           ALTER DEFAULT PRIVILEGES IN SCHEMA "public" GRANT SELECT ON TABLES TO #{user_name};
         SQL
-      execute_db_command(admin_commands, as_admin: true)
+
+      ips = Helpers.sql_ips(instance_name, context: context)
+      puts "Connecting to private ip for #{instance_name}: #{ips[:private]}"
+      execute_db_command(admin_commands, as_admin: true, private_ip: ips[:private])
       execute_db_command(database_commands)
     end
 
@@ -409,7 +412,7 @@ module Seira
       end
     end
 
-    def execute_db_command(sql_command, as_admin: false, interactive: false, print: true)
+    def execute_db_command(sql_command, as_admin: false, interactive: false, print: true, private_ip: '127.0.0.1')
       # TODO(josh): move pgbouncer naming logic here and in Create to a common location
       instance_name = primary_instance
       tier = instance_name.gsub("#{app}-", '')
@@ -422,9 +425,9 @@ module Seira
       psql_command =
         if as_admin
           root_password = Helpers.get_secret(context: context, key: "#{instance_name.tr('-', '_').upcase}_ROOT_PASSWORD")
-          "psql postgres://postgres:#{root_password}@127.0.0.1:5432"
+          "psql postgres://postgres:#{root_password}@#{private_ip}:5432"
         else
-          'psql'
+          "psql"
         end
       system_command = "kubectl exec #{pod_name} --namespace #{app}"
       system_command += ' -ti' if interactive
