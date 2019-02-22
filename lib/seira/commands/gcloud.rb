@@ -32,7 +32,7 @@ module Seira
             end
 
           unless context.nil?
-            rv = "#{rv} --region=#{context[:region]} --project=#{context[:project]}"
+            rv = "#{rv} --project=#{context[:project]}"
           end
 
           rv
