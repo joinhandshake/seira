@@ -188,7 +188,7 @@ module Seira
       end
 
       def ips
-        @_ips ||= Helpers.sql_ips(name, context: context)
+        @ips ||= Helpers.sql_ips(name, context: context)
       end
 
       def write_pgbouncer_yaml
