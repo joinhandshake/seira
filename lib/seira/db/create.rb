@@ -188,13 +188,7 @@ module Seira
       end
 
       def ips
-        @_ips ||= begin
-          describe_command = "sql instances describe #{name}"
-          json = JSON.parse(gcloud(describe_command, context: context, format: :json))
-          private_ip = json['ipAddresses'].find { |address| address['type'] == 'PRIVATE' }['ipAddress']
-          public_ip = json['ipAddresses'].find { |address| address['type'] == 'PRIMARY' }['ipAddress']
-          { private: private_ip, public: public_ip }
-        end
+        @ips ||= Helpers.sql_ips(name, context: context)
       end
 
       def write_pgbouncer_yaml
