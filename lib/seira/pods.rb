@@ -123,6 +123,13 @@ module Seira
     # connected to the same pod.
     def create_dedicated_pod(target_pod, pod_name = "temp-#{Random.unique_name}")
       spec = target_pod['spec']
+
+      # Clear out some fields that are maintained by Kubernetes
+      # and we don't want to duplicate from the old pod.
+      # If we don't clear nodeName, it'll try and schedule the
+      # new duplicated pod on the same node which may not fit.
+      spec['nodeName'] = nil
+
       temp_pod = {
         apiVersion: target_pod['apiVersion'],
         kind: 'Pod',
