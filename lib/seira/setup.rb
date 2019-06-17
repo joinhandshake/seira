@@ -121,14 +121,6 @@ module Seira
         puts "Installing kubectl..."
         system('gcloud components install kubectl')
       end
-
-      puts "Making sure kubernetes-helm is installed..."
-      # Only ask for client version since server config may not yet be configured,
-      # and in some versions of Helm it hanged.
-      unless system('helm version --client &> /dev/null')
-        puts "Installing helm..."
-        system('brew install kubernetes-helm')
-      end
     end
 
     def run_status
