@@ -5,7 +5,7 @@
 
 An opinionated library for building applications on Kubernetes.
 
-This library builds a framework for doing deployments, secrets management, managing memcached, managing redis, managing and accessing pods, bootstraping new apps and clusters, and more. It makes decisions about how to run the apps and cluster to make managing the cluster easier.
+This library builds a framework for doing deployments, secrets management, managing and accessing pods, bootstraping new apps and clusters, and more. It makes decisions about how to run the apps and cluster to make managing the cluster easier.
 
 The vision for Seira is to produce a CLI and set of guidelines that makes deploying apps on Kubernetes as easy as Heroku.
 
@@ -120,16 +120,6 @@ All functionality is targeted to be a platform on top of Kubernetes that has a H
 * Pgbouncer yaml generation for all new instances
 * Delete an instance
 
-### Memcached
-
-* List, delete memcached instances
-* Create new memcached instances with configurable CPU and Memory using Helm.
-
-### Redis
-
-* List, delete Redis instances
-* Create new Redis instances with configurable CPU and Memory using Helm.
-
 ### Pods
 
 * List pods for a given app
@@ -183,13 +173,7 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/joinha
 Future roadmap has plans for:
 
 - Create CLI help commands and improve general CLI usability
-- Cloud SQL Postgres Management (credentials, processes, diagnostics, psql, etc)
-- Smooth application restarts, including such as after changing secrets
-- Better redis and memcached production-level management
 - More functionality for managing pods
-- Maintenance page mode
-- Quickly scaling up/down deployments
-- SSL Certificate inspection and observability through kube-lego
 - More seamless `seira setup` script
 
 
