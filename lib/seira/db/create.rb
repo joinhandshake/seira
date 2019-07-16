@@ -7,6 +7,7 @@ module Seira
 
       attr_reader :name, :version, :cpu, :memory, :storage, :replica_for, :make_highly_available
       attr_reader :root_password, :proxyuser_password
+      attr_reader :prefix
 
       def initialize(app:, action:, args:, context:)
         @app = app
@@ -30,7 +31,7 @@ module Seira
       def run(existing_instances)
         @name = "#{app}-#{Seira::Random.unique_name(existing_instances)}"
 
-        run_create_command
+        run_create_command(name: name)
 
         if replica_for.nil?
           update_root_password
@@ -46,9 +47,34 @@ module Seira
         puts "To make this database the primary, promote it using the CLI and update the DATABASE_URL."
       end
 
+      def add(existing_instances)
+        if !args.empty? && (args[0].start_with? '--prefix=')
+          @prefix = args[0].split('=')[1]
+        end
+
+        if prefix.nil?
+          puts "missing --prefix= for add command. Must be the first argument."
+          exit(1)
+        end
+
+        # remove prefix from the head of the list since we don't want to pass it to gcloud
+        args.pop()
+
+        @name = "#{app}-#{prefix}-#{Seira::Random.unique_name(existing_instances)}"
+        puts "Attempting to create #{name}"
+        run_create_command(name: name)
+
+        update_root_password
+        create_proxy_user
+
+        puts "skipping set_secrets"
+
+        puts "To use this database, manually set the $ROOT_PASSWORD inside the appropriate secret"
+      end
+
       private
 
-      def run_create_command
+      def run_create_command(name:)
         # The 'beta' is needed for HA and other beta features
         create_command = "beta sql instances create #{name}"
 

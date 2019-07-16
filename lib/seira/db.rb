@@ -8,7 +8,7 @@ module Seira
   class Db
     include Seira::Commands
 
-    VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze create-readonly-user psql table-sizes index-sizes vacuum unused-indexes unused-indices user-connections info alter-proxyuser-roles].freeze
+    VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze create-readonly-user psql table-sizes index-sizes vacuum unused-indexes unused-indices user-connections info alter-proxyuser-roles add].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -26,6 +26,8 @@ module Seira
         run_help
       when 'create'
         run_create
+      when 'add'
+        run_add
       when 'delete'
         run_delete
       when 'list'
@@ -84,6 +86,7 @@ module Seira
         analyze:                Display database performance information
         connect:                Open a psql command prompt via gcloud connect. You will be shown the password needed before the prompt opens.
         create:                 Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags.
+        add:                    Adds a new database to the given project. Requires --prefix=my-prefix to prefix the random name
         create-readonly-user:   Create a database user named by --username=<name> with only SELECT access privileges
         delete:                 Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first.
         index-sizes:            List sizes of all indexes in the database
@@ -103,6 +106,10 @@ module Seira
 
     def run_create
       Seira::Db::Create.new(app: app, action: action, args: args, context: context).run(existing_instances)
+    end
+
+    def run_add
+      Seira::Db::Create.new(app: app, action: action, args: args, context: context).add(existing_instances)
     end
 
     def run_alter_proxyuser_roles
