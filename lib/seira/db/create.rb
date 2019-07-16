@@ -108,6 +108,7 @@ module Seira
         # Basic configs
         create_command += " --database-version=#{version}"
         create_command += " --network=default" # allow network to be configurable?
+        create_command += " --no-assign-ip" # don't assign public ip
 
         # A read replica cannot have HA, inherits the cpu, mem and storage of its primary
         if replica_for.nil?
