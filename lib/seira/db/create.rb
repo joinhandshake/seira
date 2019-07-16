@@ -67,9 +67,9 @@ module Seira
         update_root_password
         create_proxy_user
 
-        puts "skipping set_secrets"
-
-        puts "To use this database, manually set the $ROOT_PASSWORD inside the appropriate secret"
+        secrets_name = "#{name}-credentials"
+        kubectl("create secret generic  #{secrets_name} --from-literal=ROOT_PASSWORD=#{root_password} --from-literal=PROXYUSER_PASSWORD=#{proxyuser_password}", context: context)
+        puts "Credentials were saved in #{secrets_name}"
       end
 
       private
