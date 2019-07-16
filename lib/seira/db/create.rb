@@ -58,7 +58,7 @@ module Seira
         end
 
         # remove prefix from the head of the list since we don't want to pass it to gcloud
-        args.pop()
+        args.pop
 
         @name = "#{app}-#{prefix}-#{Seira::Random.unique_name(existing_instances)}"
         puts "Attempting to create #{name}"
