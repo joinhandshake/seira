@@ -7,6 +7,7 @@ module Seira
 
       attr_reader :name, :version, :cpu, :memory, :storage, :replica_for, :make_highly_available
       attr_reader :root_password, :proxyuser_password
+      attr_reader :prefix
 
       def initialize(app:, action:, args:, context:)
         @app = app
@@ -46,6 +47,31 @@ module Seira
         puts "To make this database the primary, promote it using the CLI and update the DATABASE_URL."
       end
 
+      def add(existing_instances)
+        if !args.empty? && (args[0].start_with? '--prefix=')
+          @prefix = args[0].split('=')[1]
+        end
+
+        if prefix.nil?
+          puts "missing --prefix= for add command. Must be the first argument."
+          exit(1)
+        end
+
+        # remove prefix from the head of the list since we don't want to pass it to gcloud
+        args.pop
+
+        @name = "#{app}-#{prefix}-#{Seira::Random.unique_name(existing_instances)}"
+        puts "Attempting to create #{name}"
+        run_create_command
+
+        update_root_password
+        create_proxy_user
+
+        secrets_name = "#{name}-credentials"
+        kubectl("create secret generic  #{secrets_name} --from-literal=ROOT_PASSWORD=#{root_password} --from-literal=PROXYUSER_PASSWORD=#{proxyuser_password}", context: context)
+        puts "Credentials were saved in #{secrets_name}"
+      end
+
       private
 
       def run_create_command
@@ -82,6 +108,7 @@ module Seira
         # Basic configs
         create_command += " --database-version=#{version}"
         create_command += " --network=default" # allow network to be configurable?
+        create_command += " --no-assign-ip" # don't assign public ip
 
         # A read replica cannot have HA, inherits the cpu, mem and storage of its primary
         if replica_for.nil?
