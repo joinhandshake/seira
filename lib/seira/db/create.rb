@@ -31,7 +31,7 @@ module Seira
       def run(existing_instances)
         @name = "#{app}-#{Seira::Random.unique_name(existing_instances)}"
 
-        run_create_command(name: name)
+        run_create_command
 
         if replica_for.nil?
           update_root_password
@@ -62,7 +62,7 @@ module Seira
 
         @name = "#{app}-#{prefix}-#{Seira::Random.unique_name(existing_instances)}"
         puts "Attempting to create #{name}"
-        run_create_command(name: name)
+        run_create_command
 
         update_root_password
         create_proxy_user
@@ -74,7 +74,7 @@ module Seira
 
       private
 
-      def run_create_command(name:)
+      def run_create_command
         # The 'beta' is needed for HA and other beta features
         create_command = "beta sql instances create #{name}"
 
