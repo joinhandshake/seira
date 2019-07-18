@@ -49,9 +49,15 @@ module Seira
       def sql_ips(name, context:)
         describe_command = "sql instances describe #{name}"
         json = JSON.parse(Seira::Commands.gcloud(describe_command, context: context, format: :json))
-        private_ip = json['ipAddresses'].find { |address| address['type'] == 'PRIVATE' }['ipAddress']
-        public_ip = json['ipAddresses'].find { |address| address['type'] == 'PRIMARY' }['ipAddress']
+        private_ip = extract_ip_if_present(json['ipAddresses'].find { |address| address['type'] == 'PRIVATE' })
+        public_ip = extract_ip_if_present(json['ipAddresses'].find { |address| address['type'] == 'PRIMARY' })
         { private: private_ip, public: public_ip }
+      end
+
+      def extract_ip_if_present(ip_address)
+        return nil if ip_address.nil?
+
+        ip_address['ipAddress']
       end
     end
   end
