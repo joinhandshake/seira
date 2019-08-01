@@ -8,6 +8,7 @@ require 'seira/commands'
 require "seira/version"
 require 'helpers'
 require 'seira/app'
+require 'seira/config'
 require 'seira/cluster'
 require 'seira/pods'
 require 'seira/jobs'
@@ -28,6 +29,7 @@ module Seira
 
     CATEGORIES = {
       'secrets' => Seira::Secrets,
+      'config' => Seira::Config,
       'pods' => Seira::Pods,
       'jobs' => Seira::Jobs,
       'db' => Seira::Db,
