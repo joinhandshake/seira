@@ -196,7 +196,7 @@ module Seira
 
     # Filter out parameters which start with --
     def key_value_map
-      args.select { |arg| !arg.start_with?("--") }.map do |arg|
+      args.reject { |arg| arg.start_with?("--") }.map do |arg|
         equals_index = arg.index('=')
         [arg[0..equals_index - 1], arg[equals_index + 1..-1]]
       end.to_h
