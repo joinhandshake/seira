@@ -159,8 +159,6 @@ module Seira
           f.write(secrets.to_json)
         end
 
-        puts secrets.to_json
-
         # The command we use depends on if it already exists or not
         secret_exists = kubectl("get secret #{secret_name}", context: context) # TODO: Do not log, pipe output to dev/null
         command = secret_exists ? "replace" : "create"
