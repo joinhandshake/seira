@@ -10,7 +10,7 @@ module Seira
   class Secrets
     include Seira::Commands
 
-    VALID_ACTIONS = %w[help get set unset list list-decoded].freeze
+    VALID_ACTIONS = %w[help get set unset list list-decoded create-secret-container].freeze
     PGBOUNCER_SECRETS_NAME = 'pgbouncer-secrets'.freeze
     SUMMARY = "Manage your application's secrets and environment variables.".freeze
 
@@ -40,6 +40,8 @@ module Seira
         run_list
       when 'list-decoded'
         run_list_decoded
+      when 'create-secret-container'
+        run_create_secret_container
       else
         fail "Unknown command encountered"
       end
@@ -76,14 +78,17 @@ module Seira
     def run_help
       puts SUMMARY
       puts "\n\n"
-      puts "Possible actions:\n\n"
+      puts "Possible actions to operate on secret contaiers. Default"
+      puts "container will be used unless --container=<name> specified:\n\n"
       puts "get: fetch the value of a secret: `secrets get PASSWORD`"
       puts "set: set one or more secret values: `secrets set USERNAME=admin PASSWORD=asdf`"
       puts "     to specify a value with spaces: `secrets set LIPSUM=\"Lorem ipsum\"`"
       puts "     to specify a value with newlines: `secrets set RSA_KEY=\"$(cat key.pem)\"`"
       puts "unset: remove a secret: `secrets unset PASSWORD`"
       puts "list: list all secret keys and values"
-      puts "list: list all secret keys and values, and decode from base64"
+      puts "list-decoded: list all secret keys and values, and decode from base64"
+      puts "\n\n"
+      puts "create-secret-container: takes one argument, the name, and creates a new container of secrets (Secret object) with that name"
     end
 
     def validate_single_key
@@ -137,14 +142,24 @@ module Seira
       end
     end
 
+    def run_create_secret_container
+      secret_name = key
+      puts "Creating Kubernetes Secret with name '#{secret_name}'..."
+      kubectl("create secret generic #{secret_name}", context: context)
+      puts "Secret Object '#{secret_name}' created. You can now set, unset, list secrets in this container Secret object."
+    end
+
     # In the normal case the secret we are updating is just main_secret_name,
-    # but in special cases we may be doing an operation on a different secret
-    def write_secrets(secrets:, secret_name: main_secret_name)
+    # but in special cases we may be doing an operation on a different secret such
+    # as use passing --container arg
+    def write_secrets(secrets:, secret_name: secret_container_from_args)
       Dir.mktmpdir do |dir|
         file_name = "#{dir}/temp-secrets-#{Seira::Cluster.current_cluster}-#{secret_name}.json"
         File.open(file_name, "w") do |f|
           f.write(secrets.to_json)
         end
+
+        puts secrets.to_json
 
         # The command we use depends on if it already exists or not
         secret_exists = kubectl("get secret #{secret_name}", context: context) # TODO: Do not log, pipe output to dev/null
@@ -160,8 +175,9 @@ module Seira
 
     # Returns the still-base64encoded secrets hashmap
     def fetch_current_secrets
-      json_string = kubectl("get secret #{main_secret_name} -o json", context: context, return_output: true)
+      json_string = kubectl("get secret #{secret_container_from_args} -o json", context: context, return_output: true)
       json = JSON.parse(json_string)
+      json['data'] ||= {} # For secret that has no key/values yet, this ensures a consistent experience
       fail "Unexpected Kind" unless json['kind'] == 'Secret'
       json
     end
@@ -170,8 +186,19 @@ module Seira
       args[0]
     end
 
+    def secret_container_from_args
+      relevant_arg = args.find { |arg| arg.start_with? '--container=' }
+
+      if relevant_arg
+        relevant_arg.split("=")[1]
+      else
+        main_secret_name
+      end
+    end
+
+    # Filter out parameters which start with --
     def key_value_map
-      args.map do |arg|
+      args.filter { |arg| !arg.start_with?("--") }.map do |arg|
         equals_index = arg.index('=')
         [arg[0..equals_index - 1], arg[equals_index + 1..-1]]
       end.to_h
