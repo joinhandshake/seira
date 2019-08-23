@@ -3,9 +3,9 @@ module Seira
     class WritePgbouncerYaml
       include Seira::Commands
 
-      attr_reader :app, :name
+      attr_reader :app, :name, :context
 
-      def initialize(app:, action:, args:, context:)
+      def initialize(app:, args:, context:)
         if args.length != 1
           puts 'Specify db name as positional argument'
           exit(1)
@@ -13,6 +13,7 @@ module Seira
 
         @app = app
         @name = args[0]
+        @context = context
       end
 
       def run
@@ -151,4 +152,3 @@ FOO
     end
   end
 end
-  

@@ -121,7 +121,7 @@ module Seira
     end
 
     def run_write_pgbouncer_yaml
-      Seira::Db::WritePgbouncerYaml.new(app: app, action: action, args: args, context: context).run
+      Seira::Db::WritePgbouncerYaml.new(app: app, args: args, context: context).run
     end
 
     def run_delete
