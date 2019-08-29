@@ -34,6 +34,10 @@ module Seira
         name.gsub("#{app}-", "")
       end
 
+      def ips
+        @ips ||= Helpers.sql_ips(name, context: context)
+      end
+
       def write_pgbouncer_yaml
         # TODO: Clean this up by moving into a proper templated yaml file
         pgbouncer_yaml = <<-FOO
@@ -67,7 +71,7 @@ spec:
         database: #{name}
     spec:
       containers:
-        - image: handshake/pgbouncer:0.2.0
+        - image: handshake/pgbouncer:0.3.1
           name: pgbouncer
           ports:
             - containerPort: 6432

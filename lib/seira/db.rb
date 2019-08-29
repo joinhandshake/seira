@@ -14,7 +14,7 @@ module Seira
       analyze create-readonly-user psql table-sizes 
       index-sizes vacuum unused-indexes unused-indices 
       user-connections info alter-proxyuser-roles add
-      write-pbouncer-yaml
+      write-pgbouncer-yaml
     ].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
