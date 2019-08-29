@@ -2,13 +2,20 @@ require 'securerandom'
 require 'English'
 
 require_relative 'db/alter_proxyuser_roles'
+require_relative 'db/write_pgbouncer_yaml'
 require_relative 'db/create'
 
 module Seira
   class Db
     include Seira::Commands
 
-    VALID_ACTIONS = %w[help create delete list restart connect ps kill analyze create-readonly-user psql table-sizes index-sizes vacuum unused-indexes unused-indices user-connections info alter-proxyuser-roles add].freeze
+    VALID_ACTIONS = %w[
+      help create delete list restart connect ps kill
+      analyze create-readonly-user psql table-sizes
+      index-sizes vacuum unused-indexes unused-indices
+      user-connections info alter-proxyuser-roles add
+      write-pgbouncer-yaml
+    ].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
     attr_reader :app, :action, :args, :context
@@ -60,6 +67,8 @@ module Seira
         run_info
       when 'alter-proxyuser-roles'
         run_alter_proxyuser_roles
+      when 'write-pgbouncer-yaml'
+        run_write_pgbouncer_yaml
       else
         fail "Unknown command encountered"
       end
@@ -101,6 +110,7 @@ module Seira
         user-connections:       List number of connections per user
         vacuum:                 Run a VACUUM ANALYZE
         alter-proxyuser-roles:  Update NOCREATEDB and NOCREATEROLE roles for proxyuser in cloud sql.
+        write-pbouncer-yaml:    Produces a Kubernetes Deployment yaml to run Pgbouncer for specified database.
       HELPTEXT
     end
 
@@ -114,6 +124,10 @@ module Seira
 
     def run_alter_proxyuser_roles
       Seira::Db::AlterProxyuserRoles.new(app: app, action: action, args: args, context: context).run
+    end
+
+    def run_write_pgbouncer_yaml
+      Seira::Db::WritePgbouncerYaml.new(app: app, args: args, context: context).run
     end
 
     def run_delete
