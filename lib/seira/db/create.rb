@@ -39,11 +39,10 @@ module Seira
         end
 
         set_secrets
-        write_pgbouncer_yaml
 
         alter_proxy_user_roles if replica_for.nil?
 
-        puts "To use this database, deploy the pgbouncer config file that was created and use the ENV that was set."
+        puts "To use this database, use write-pgbouncer-yaml command and deploy the pgbouncer config file that was created and use the ENV that was set."
         puts "To make this database the primary, promote it using the CLI and update the DATABASE_URL."
       end
 
