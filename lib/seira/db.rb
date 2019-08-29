@@ -10,9 +10,9 @@ module Seira
     include Seira::Commands
 
     VALID_ACTIONS = %w[
-      help create delete list restart connect ps kill 
-      analyze create-readonly-user psql table-sizes 
-      index-sizes vacuum unused-indexes unused-indices 
+      help create delete list restart connect ps kill
+      analyze create-readonly-user psql table-sizes
+      index-sizes vacuum unused-indexes unused-indices
       user-connections info alter-proxyuser-roles add
       write-pgbouncer-yaml
     ].freeze
