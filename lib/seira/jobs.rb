@@ -113,7 +113,6 @@ module Seira
 
       source = "kubernetes/#{context[:cluster]}/#{app}" # TODO: Move to method in app.rb
       Dir.mktmpdir do |destination|
-        revision = ENV['REVISION']
         file_name = discover_job_template_file_name(source)
 
         FileUtils.mkdir_p destination # Create the nested directory

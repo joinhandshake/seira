@@ -3,6 +3,8 @@ module Seira
     class ResourceRenderer
       include ERB::Util
 
+      DEFAULT_JOB_PARALELLISM = 1
+
       def initialize(template:, context:, locals:)
         @template = template
         @context = context
@@ -45,6 +47,12 @@ module Seira
         fail "Missing value for secret #{secret_name}" unless secret_value
 
         secret_value
+      end
+
+      def job_parallelism(parallelism)
+        rv = parallelism || DEFAULT_JOB_PARALELLISM
+        @summary['parallelism'] = rv
+        rv
       end
 
       def target_revision
