@@ -108,7 +108,6 @@ module Seira
       replacement_hash = {
         'UNIQUE_NAME' => unique_name,
         'REVISION' => revision,
-        'JOB_PARALLELISM' => ENV['JOB_PARALLELISM'],
         'COMMAND' => %("sh", "-c", "#{command}")
       }.merge(resource_hash)
 

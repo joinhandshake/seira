@@ -3,6 +3,8 @@ module Seira
     class ResourceRenderer
       include ERB::Util
 
+      DEFAULT_JOB_PARALELLISM = 1
+
       def initialize(template:, context:, locals:)
         @template = template
         @context = context
@@ -48,7 +50,7 @@ module Seira
       end
 
       def job_parallelism(parallelism)
-        rv = @locals['JOB_PARALLELISM'] || 1
+        rv = parallelism || DEFAULT_JOB_PARALELLISM
         @summary['parallelism'] = rv
         rv
       end
