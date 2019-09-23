@@ -108,12 +108,12 @@ module Seira
       replacement_hash = {
         'UNIQUE_NAME' => unique_name,
         'REVISION' => revision,
+        'JOB_PARALLELISM' => ENV['JOB_PARALLELISM'],
         'COMMAND' => %("sh", "-c", "#{command}")
       }.merge(resource_hash)
 
       source = "kubernetes/#{context[:cluster]}/#{app}" # TODO: Move to method in app.rb
       Dir.mktmpdir do |destination|
-        revision = ENV['REVISION']
         file_name = discover_job_template_file_name(source)
 
         FileUtils.mkdir_p destination # Create the nested directory

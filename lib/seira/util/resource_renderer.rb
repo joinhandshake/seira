@@ -47,6 +47,12 @@ module Seira
         secret_value
       end
 
+      def job_parallelism(parallelism)
+        rv = @locals['JOB_PARALLELISM'] || 1
+        @summary['parallelism'] = rv
+        rv
+      end
+
       def target_revision
         rv = @locals['REVISION']
         @summary["revision"] = rv
