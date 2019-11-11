@@ -238,11 +238,16 @@ module Seira
     # Example: seira staging app-name db create-readonly-user --username=readonlyuser
     def run_create_readonly_user
       instance_name = primary_instance # Always make user changes to primary instance, and they will propogate to replicas
+      pgbouncer_tier = nil
       user_name = nil
 
       args.each do |arg|
         if arg.start_with? '--username='
           user_name = arg.split('=')[1]
+        elsif arg.start_with? '--instance='
+          instance_name = arg.split('=')[1]
+        elsif arg.start_with? '--pgbouncer-tier='
+          pgbouncer_tier = arg.split('=')[1]
         else
           puts "Warning: Unrecognized argument '#{arg}'"
         end
@@ -259,7 +264,7 @@ module Seira
         exit(1)
       end
 
-      valid_instance_names = existing_instances(remove_app_prefix: false).join(', ')
+      valid_instance_names = existing_instances(remove_app_prefix: false)
       if instance_name.nil? || instance_name.strip.chomp == '' || !valid_instance_names.include?(instance_name)
         puts "Could not find a valid instance name - does the DATABASE_URL have a value? Must be one of: #{valid_instance_names}"
         exit(1)
@@ -287,8 +292,8 @@ module Seira
         SQL
 
       puts "Connecting"
-      execute_db_command(admin_commands, as_admin: true)
-      execute_db_command(database_commands)
+      execute_db_command(admin_commands, instance_name: instance_name, pgbouncer_tier: pgbouncer_tier, as_admin: true)
+      execute_db_command(database_commands, instance_name: instance_name, pgbouncer_tier: pgbouncer_tier)
     end
 
     def run_psql
@@ -432,12 +437,12 @@ module Seira
       end
     end
 
-    def execute_db_command(sql_command, as_admin: false, interactive: false, print: true)
+    def execute_db_command(sql_command, instance_name: nil, pgbouncer_tier: nil, as_admin: false, interactive: false, print: true)
       # TODO(josh): move pgbouncer naming logic here and in Create to a common location
-      instance_name = primary_instance
+      instance_name ||= primary_instance
       private_ip = Helpers.sql_ips(instance_name, context: context)[:private]
-      tier = instance_name.gsub("#{app}-", '')
-      matching_pods = Helpers.fetch_pods(context: context, filters: { tier: tier })
+      pgbouncer_tier ||= instance_name.gsub("#{app}-", '')
+      matching_pods = Helpers.fetch_pods(context: context, filters: { tier: pgbouncer_tier })
       if matching_pods.empty?
         puts 'Could not find pgbouncer pod to connect to'
         exit 1
