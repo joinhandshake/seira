@@ -4,10 +4,12 @@ module Seira
 
     class << self
       def rails_env(context:)
-        if context[:cluster] == 'internal'
+        parsed_env = context[:settings].settings['seira']['clusters'][context[:cluster]]['environment']
+        parsed_env = context[:cluster] if parsed_env.nil?
+        if parsed_env == 'internal'
           'production'
         else
-          context[:cluster]
+          parsed_env
         end
       end
 
