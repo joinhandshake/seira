@@ -94,7 +94,6 @@ module Seira
       puts SUMMARY
       puts "\n"
       puts <<~HELPTEXT
-        THIS IS THE LOCAL GEM
         analyze:                Display database performance information
         connect:                Open a psql command prompt via gcloud connect. You will be shown the password needed before the prompt opens.
         create:                 Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags.

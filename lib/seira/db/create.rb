@@ -66,9 +66,6 @@ module Seira
         @replica_for = master_name
 
         configure_created_db
-
-        puts "To use this database, use write-pgbouncer-yaml command and deploy the pgbouncer config file that was created and use the ENV that was set."
-        puts "To make this database the primary, promote it using the CLI and update the DATABASE_URL."
       end
 
       private
@@ -82,6 +79,9 @@ module Seira
         set_secrets
 
         alter_proxy_user_roles if replica_for.nil?
+
+        puts "To use this database, use write-pgbouncer-yaml command and deploy the pgbouncer config file that was created and use the ENV that was set."
+        puts "To make this database the primary, promote it using the CLI and update the DATABASE_URL."
       end
 
       def run_create_command
