@@ -33,17 +33,7 @@ module Seira
 
         run_create_command
 
-        if replica_for.nil?
-          update_root_password
-          create_proxy_user
-        end
-
-        set_secrets
-
-        alter_proxy_user_roles if replica_for.nil?
-
-        puts "To use this database, use write-pgbouncer-yaml command and deploy the pgbouncer config file that was created and use the ENV that was set."
-        puts "To make this database the primary, promote it using the CLI and update the DATABASE_URL."
+        configure_created_db
       end
 
       def add(existing_instances)
@@ -71,7 +61,28 @@ module Seira
         puts "Credentials were saved in #{secrets_name}"
       end
 
+      def configure(instance_name, master_name)
+        @name = instance_name
+        @replica_for = master_name
+
+        configure_created_db
+
+        puts "To use this database, use write-pgbouncer-yaml command and deploy the pgbouncer config file that was created and use the ENV that was set."
+        puts "To make this database the primary, promote it using the CLI and update the DATABASE_URL."
+      end
+
       private
+
+      def configure_created_db
+        if replica_for.nil?
+          update_root_password
+          create_proxy_user
+        end
+
+        set_secrets
+
+        alter_proxy_user_roles if replica_for.nil?
+      end
 
       def run_create_command
         # The 'beta' is needed for HA and other beta features

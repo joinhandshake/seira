@@ -14,7 +14,7 @@ module Seira
       analyze create-readonly-user psql table-sizes
       index-sizes vacuum unused-indexes unused-indices
       user-connections info alter-proxyuser-roles add
-      write-pgbouncer-yaml
+      configure write-pgbouncer-yaml
     ].freeze
     SUMMARY = "Manage your Cloud SQL Postgres databases.".freeze
 
@@ -35,6 +35,8 @@ module Seira
         run_create
       when 'add'
         run_add
+      when 'configure'
+        run_configure
       when 'delete'
         run_delete
       when 'list'
@@ -92,9 +94,11 @@ module Seira
       puts SUMMARY
       puts "\n"
       puts <<~HELPTEXT
+        THIS IS THE LOCAL GEM
         analyze:                Display database performance information
         connect:                Open a psql command prompt via gcloud connect. You will be shown the password needed before the prompt opens.
         create:                 Create a new postgres instance in cloud sql. Supports creating replicas and other numerous flags.
+        configure:              Configure users and related secrets for existing db instance --instance= with optional --master= for read replica.
         add:                    Adds a new database to the given project. Requires --prefix=my-prefix to prefix the random name
         create-readonly-user:   Create a database user named by --username=<name> with only SELECT access privileges
         delete:                 Delete a postgres instance from cloud sql. Use with caution, and remove all kubernetes configs first.
@@ -120,6 +124,26 @@ module Seira
 
     def run_add
       Seira::Db::Create.new(app: app, action: action, args: args, context: context).add(existing_instances)
+    end
+
+    def run_configure
+      instance_name = nil
+      master_name = nil
+      args.each do |arg|
+        if arg.start_with? '--instance='
+          instance_name = arg.split('=')[1]
+        elsif arg.start_with? '--master='
+          master_name = arg.split('=')[1]
+        else
+          puts "Warning: Unrecognized argument '#{arg}'"
+        end
+      end
+
+      if instance_name.nil? || instance_name.strip.chomp == ''
+        puts "Please specify the db instance name, like --instance=name"
+        exit(1)
+      end
+      Seira::Db::Create.new(app: app, action: action, args: args, context: context).configure(instance_name, master_name)
     end
 
     def run_alter_proxyuser_roles
