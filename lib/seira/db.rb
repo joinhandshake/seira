@@ -1,7 +1,6 @@
 require 'securerandom'
 require 'English'
 
-require_relative 'db/alter_proxyuser_roles'
 require_relative 'db/write_pgbouncer_yaml'
 require_relative 'db/create'
 
@@ -146,7 +145,18 @@ module Seira
     end
 
     def run_alter_proxyuser_roles
-      Seira::Db::AlterProxyuserRoles.new(app: app, action: action, args: args, context: context).run
+      instance_name = nil
+      args.each do |arg|
+        if arg.start_with? '--instance='
+          instance_name = arg.split('=')[1]
+        else
+          puts "Warning: Unrecognized argument '#{arg}'"
+        end
+      end
+
+      command = "ALTER ROLE proxyuser NOCREATEDB NOCREATEROLE;"
+      execute_db_command(command, instance_name: instance_name, as_admin: true)
+      puts "Removed Create role and Create DB roles from proxyuser"
     end
 
     def run_write_pgbouncer_yaml

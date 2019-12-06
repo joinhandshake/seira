@@ -78,9 +78,10 @@ module Seira
 
         set_secrets
 
-        alter_proxy_user_roles if replica_for.nil?
-
         puts "To use this database, use write-pgbouncer-yaml command and deploy the pgbouncer config file that was created and use the ENV that was set."
+        if replica_for.nil?
+          puts "After deploying, make sure to run alter-proxyuser-roles for the created instance."
+        end
         puts "To make this database the primary, promote it using the CLI and update the DATABASE_URL."
       end
 
@@ -173,10 +174,6 @@ module Seira
           puts "Failed to create proxyuser"
           exit(1)
         end
-      end
-
-      def alter_proxy_user_roles
-        Seira::Db::AlterProxyuserRoles.new(app: app, action: action, args: [name, root_password], context: context).run
       end
 
       def set_secrets
