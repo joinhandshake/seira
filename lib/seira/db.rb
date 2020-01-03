@@ -330,7 +330,21 @@ module Seira
     end
 
     def run_psql
-      execute_db_command(nil, interactive: true)
+      as_admin = false
+
+      args.each do |arg|
+        if arg == '--as-root-user'
+          as_admin = true
+        else
+          puts "Warning: Unrecognized argument '#{arg}'"
+        end
+      end
+
+      if as_admin
+        puts "!! Warning !!! You are running as root PSQL user `postgres`. This super user account has full admin priveleges. Use with extreme care."
+      end
+
+      execute_db_command(nil, interactive: true, as_admin: as_admin)
     end
 
     def run_table_sizes
