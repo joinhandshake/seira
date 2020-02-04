@@ -179,7 +179,7 @@ module Seira
       # 'internal' is a unique cluster/project "cluster". It always means production in terms of rails app.
       rails_env = Helpers.rails_env(context: context)
 
-      kubectl("create secret generic #{main_secret_name} --from-literal=RAILS_ENV=#{rails_env} --from-literal=RACK_ENV=#{rails_env}", context: context)
+      kubectl("create secret generic #{main_secret_name}", context: context)
     end
 
     def find_and_replace_revision(source:, destination:, replacement_hash:)
