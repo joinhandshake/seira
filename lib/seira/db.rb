@@ -75,16 +75,8 @@ module Seira
       end
     end
 
-    # NOTE: Relies on the pgbouncer instance being named based on the db name, as is done in create command
     def primary_instance
-      database_url = Helpers.get_secret(context: context, key: 'DATABASE_URL')
-      return nil unless database_url
-
-      primary_uri = URI.parse(database_url)
-      host = primary_uri.host
-
-      # Convert handshake-onyx-burmese-pgbouncer-service to handshake-onyx-burmese
-      host.gsub('-pgbouncer-service', '')
+      Seira::Helpers.get_seira_app_config(context: context)['primary_sql_instance']
     end
 
     private
@@ -331,10 +323,13 @@ module Seira
 
     def run_psql
       as_admin = false
+      instance_name = nil
 
       args.each do |arg|
         if arg == '--as-root-user'
           as_admin = true
+        elsif arg.start_with? '--instance='
+          instance_name = arg.split('=')[1]
         else
           puts "Warning: Unrecognized argument '#{arg}'"
         end
@@ -344,7 +339,7 @@ module Seira
         puts "!! Warning !!! You are running as root PSQL user `postgres`. This super user account has full admin priveleges. Use with extreme care."
       end
 
-      execute_db_command(nil, interactive: true, as_admin: as_admin)
+      execute_db_command(nil, interactive: true, instance_name: instance_name, as_admin: as_admin)
     end
 
     def run_table_sizes
@@ -488,6 +483,8 @@ module Seira
       # TODO(josh): move pgbouncer naming logic here and in Create to a common location
       instance_name ||= primary_instance
       private_ip = Helpers.sql_ips(instance_name, context: context)[:private]
+
+      # NOTE: Relies on the pgbouncer instance being named based on the db name, as is done in create command
       pgbouncer_tier ||= instance_name.gsub("#{app}-", '')
       matching_pods = Helpers.fetch_pods(context: context, filters: { tier: pgbouncer_tier })
       if matching_pods.empty?

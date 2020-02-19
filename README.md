@@ -83,6 +83,15 @@ seira:
 
 This specification is read in and used to determine what `gcloud` context to use and what `kubectl` cluster to use when operating commands. For example, `seira internal` will connect to `org-internal` gcloud configuration and `gke_org-internal_us-central1-a_internal` kubectl cluster. For shorthand, `seira i` shorthand is specified as an alias.
 
+### Application Configuration Files
+
+Each app can also define configuration files. These files specify details that allow seira to execute commands with minimal user input, and declare aspects of the application. This file lives in the app folder with the name `.seira.app.yaml`. An example configuration file:
+
+```
+# The name of the sql instance as it shows in GCP Cloud SQL UI
+primary_sql_instance: app-database-name
+```
+
 ### Regions and Zones
 
 All clusters should have a `region` option specified. For zonal clusters (clusters that are NOT regional) should also specify their `zone`.
