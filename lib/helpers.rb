@@ -1,3 +1,5 @@
+require 'yaml'
+
 module Seira
   class Helpers
     include Seira::Commands
@@ -35,6 +37,13 @@ module Seira
 
       def get_secret(key:, context:)
         Secrets.new(app: context[:app], action: 'get', args: [], context: context).get(key)
+      end
+
+      def get_seira_app_config(context:)
+        yaml_file_path = "kubernetes/#{context[:cluster]}/#{context[:app]}/.seira.app.yaml"
+        YAML.load_file(yaml_file_path)
+      rescue
+        fail "Failed to load the configuration file at #{yaml_file_path}. Please add configuration file and retry."
       end
 
       def get_current_replicas(deployment:, context:)
