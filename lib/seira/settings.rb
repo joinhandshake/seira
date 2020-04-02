@@ -3,7 +3,7 @@ require 'yaml'
 
 module Seira
   class Settings
-    DEFAULT_CONFIG_PATH = '.seira.yml'.freeze
+    DEFAULT_CONFIG_PATH = ENV['SEIRA_CONFIG_PATH'] || '.seira.yml'.freeze
 
     attr_reader :config_path
 

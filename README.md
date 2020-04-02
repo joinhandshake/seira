@@ -43,7 +43,9 @@ The only exception is commands on the cluster itself, which does not take an `<a
 
 ### Configuration File
 
-A configuration file is expected at `.seira.yml` relative path. Below is an example file.
+By default, a configuration file is expected at `.seira.yml` relative path. Alternatively, the path can be specified using the environment variable `SEIRA_CONFIG_PATH`, ex. `export SEIRA_CONFIG_PATH=/path/to/.seira.yml`.
+
+Below is an example file.
 
 ```
 seira:
