@@ -31,8 +31,6 @@ module Seira
         run_top
       when 'connect'
         run_connect
-      when 'run'
-        run_run
       else
         fail "Unknown command encountered"
       end
