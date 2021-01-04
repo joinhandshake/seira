@@ -165,7 +165,7 @@ Pods can be listed and also exec'd into.
 
 `seira staging app-name pods list`
 
-`seira staging app-name pods run`
+`seira staging app-name pods connect --pod=<POD-NAME>`
 
 ## Development
 
