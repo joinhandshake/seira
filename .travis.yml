@@ -3,5 +3,6 @@ language: ruby
 notifications:
   email: false
 rvm:
-  - 2.5.3
+  - 2.6.3
+  - 2.7.2
 before_install: gem install bundler
