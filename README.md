@@ -1,7 +1,7 @@
 # Seira
 
 [![Gem Version](https://badge.fury.io/rb/seira.svg)](https://badge.fury.io/rb/seira)
-[![Build Status](https://travis-ci.org/joinhandshake/seira.svg?branch=master)](https://travis-ci.org/joinhandshake/seira)
+[![Build Status](https://travis-ci.com/joinhandshake/seira.svg?branch=main)](https://travis-ci.com/github/joinhandshake/seira)
 
 An opinionated library for building applications on Kubernetes.
 
